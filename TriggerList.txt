@@ -3,3 +3,4 @@
 proveedores especiales.
 -El peso de los chips obtenidos en la chipeadora por día, no puede variar en más de un 5% con respecto al peso inicial de la madera proveniente del depósito maderero. 
 - Trigger para saber si hay suficiente stock
+-Asegurar que el chipeo lo haga un "capataz" (jefe)

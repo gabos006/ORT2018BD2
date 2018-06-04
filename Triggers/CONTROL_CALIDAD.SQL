@@ -1,4 +1,11 @@
-create or replace TRIGGER control_calidad  BEFORE INSERT OR UPDATE ON MADERACHIP
+--------------------------------------------------------
+--  File created - Sunday-June-03-2018   
+--------------------------------------------------------
+--------------------------------------------------------
+--  DDL for Trigger CONTROL_CALIDAD
+--------------------------------------------------------
+
+  CREATE OR REPLACE TRIGGER "OBLIGATORIO"."CONTROL_CALIDAD" BEFORE INSERT OR UPDATE ON MADERACHIP
 For Each Row
  follows CONTROL_PESO
 DECLARE
@@ -16,11 +23,6 @@ IF UPDATING THEN
     v_peso_madera := v_peso_madera - :OLD.PESOMADERALOTE;
 END IF;  
 
-IF UPDATING THEN 
-    v_peso_chip := v_peso_chip - :OLD.PESOCHIP;
-    v_peso_madera := v_peso_madera - :OLD.PESOMADERALOTE;
-END IF;  
-
 v_peso_chip := v_peso_chip + :NEW.PESOCHIP;
 v_peso_madera := v_peso_madera + :NEW.PESOMADERALOTE;
 v_porcentaje := v_peso_chip *  v_peso_madera / 100;
@@ -30,24 +32,5 @@ IF  (v_porcentaje < 95) THEN
 END IF;
 
 END;
-
-/*********************************/
-
-create or replace TRIGGER control_peso BEFORE INSERT OR UPDATE ON MADERACHIP
-For Each Row
-
-DECLARE
-	v_peso_lote NUMBER(10);
-BEGIN
-
-SELECT l.PESOACTUAL INTO v_peso_lote FROM LOTEMADERA l WHERE :NEW.LOTE = l.IDLOTE;
-
-IF UPDATING THEN 
-  v_peso_lote := v_peso_lote + :OLD.PESOMADERALOTE;
-END IF;  
-
-IF  (v_peso_lote < :NEW.PESOMADERALOTE) THEN
-	Raise_Application_Error (-20002, 'Fallo el control de peso');
-END IF;
-
-END;
+/
+ALTER TRIGGER "OBLIGATORIO"."CONTROL_CALIDAD" ENABLE;
