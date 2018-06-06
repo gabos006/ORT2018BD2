@@ -1,6 +1,29 @@
+CREATE OR REPLACE TRIGGER control_peso BEFORE INSERT OR UPDATE ON MADERACHIP
+FOR EACH ROW
+
+DECLARE
+	v_peso_lote NUMBER(10);
+BEGIN
+
+    SELECT l.PESOACTUAL INTO v_peso_lote FROM LOTEMADERA l WHERE :NEW.LOTE = l.IDLOTE;
+    
+    IF UPDATING THEN 
+      v_peso_lote := v_peso_lote + :OLD.PESOMADERALOTE;
+    END IF;  
+    
+    IF  (v_peso_lote < :NEW.PESOMADERALOTE) THEN
+        Raise_Application_Error (-20002, 'Fallo el control de peso');
+    END IF;
+
+END;
+/
+ALTER TRIGGER control_peso ENABLE;
+
+/****************************************************************************************************************/
+
 CREATE OR REPLACE TRIGGER control_calidad  BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
- follows CONTROL_PESO
+ follows control_peso
 DECLARE
 	v_peso_chip NUMBER(10);
 	v_peso_madera NUMBER(10);
@@ -25,30 +48,10 @@ BEGIN
 	END IF;
 
 END;
+/
+ALTER TRIGGER control_calidad ENABLE;
 
-/*********************************/
-
-CREATE OR REPLACE TRIGGER control_peso BEFORE INSERT OR UPDATE ON MADERACHIP
-FOR EACH ROW
-
-DECLARE
-	v_peso_lote NUMBER(10);
-BEGIN
-
-    SELECT l.PESOACTUAL INTO v_peso_lote FROM LOTEMADERA l WHERE :NEW.LOTE = l.IDLOTE;
-    
-    IF UPDATING THEN 
-      v_peso_lote := v_peso_lote + :OLD.PESOMADERALOTE;
-    END IF;  
-    
-    IF  (v_peso_lote < :NEW.PESOMADERALOTE) THEN
-        Raise_Application_Error (-20002, 'Fallo el control de peso');
-    END IF;
-
-END;
-
-/*********************************/
-
+/****************************************************************************************************************/
 
 CREATE OR REPLACE TRIGGER actualizar_peso AFTER INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
@@ -61,10 +64,10 @@ BEGIN
     UPDATE LOTEMADERA SET PESOACTUAL = v_peso_suma WHERE IDLOTE = :NEW.LOTE;
 
 END;
+/
+ALTER TRIGGER actualizar_peso ENABLE;
 
-/*********************************/
-
-
+/****************************************************************************************************************/
 create or replace TRIGGER control_capataz_chipeo BEFORE INSERT OR UPDATE ON MADERACHIP
 For Each Row
 
@@ -79,10 +82,12 @@ IF(v_cijefe = NULL) THEN
 END IF;
 
 END;
+/
+ALTER TRIGGER control_capataz_chipeo ENABLE;
 
-/*********************************/
+/****************************************************************************************************************/
 
-create or replace TRIGGER "CONTROL_PESO_COCCION" BEFORE INSERT OR UPDATE ON COCCION
+create or replace TRIGGER control_peso_coccion BEFORE INSERT OR UPDATE ON COCCION
 For Each Row
 
 DECLARE
@@ -96,3 +101,5 @@ IF(:NEW.PESO > v_peso_chip) THEN
 END IF;
 
 END;
+/
+ALTER TRIGGER control_peso_coccion ENABLE;
