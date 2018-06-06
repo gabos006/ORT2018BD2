@@ -1,8 +1,6 @@
 -La empresa no puede poner precio a la madera si es ella misma el proveedor
--Los proveedores que superen las 10 toneladas en el mes, deberán quedar registrados como
-proveedores especiales.
 *El peso de los chips obtenidos en la chipeadora por día, no puede variar en más de un 5% con respecto al peso inicial de la madera proveniente del depósito maderero. 
 - Trigger para saber si hay suficiente stock
-- Asegurar que el chipeo lo haga un "capataz" (jefe)
+*Asegurar que el chipeo lo haga un "capataz" (jefe)
 - En insert o update de coccion controlar que el peso de coccion no supere al peso de madera chip referenciado
 - En insert o update de producto coccion controlar que el peso de producto coccion no supere al peso de coccion
