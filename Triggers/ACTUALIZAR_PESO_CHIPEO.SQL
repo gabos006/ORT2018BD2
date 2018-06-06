@@ -1,11 +1,11 @@
 --------------------------------------------------------
---  File created - Sunday-June-03-2018   
+--  File created - Wednesday-June-06-2018   
 --------------------------------------------------------
 --------------------------------------------------------
---  DDL for Trigger ACTUALIZAR_PESO
+--  DDL for Trigger ACTUALIZAR_PESO_CHIPEO
 --------------------------------------------------------
 
-CREATE OR REPLACE TRIGGER "OBLIGATORIO"."ACTUALIZAR_PESO" AFTER INSERT OR UPDATE ON MADERACHIP
+  CREATE OR REPLACE TRIGGER "OBLIGATORIO"."ACTUALIZAR_PESO_CHIPEO" AFTER INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
 
 DECLARE
@@ -16,5 +16,6 @@ BEGIN
 	UPDATE LOTEMADERA SET PESOACTUAL = v_peso_suma WHERE IDLOTE = :NEW.LOTE;
 
 END;
+
 /
-ALTER TRIGGER "OBLIGATORIO"."ACTUALIZAR_PESO" ENABLE;
+ALTER TRIGGER "OBLIGATORIO"."ACTUALIZAR_PESO_CHIPEO" ENABLE;

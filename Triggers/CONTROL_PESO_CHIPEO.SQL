@@ -1,11 +1,11 @@
 --------------------------------------------------------
---  File created - Sunday-June-03-2018   
+--  File created - Wednesday-June-06-2018   
 --------------------------------------------------------
 --------------------------------------------------------
---  DDL for Trigger CONTROL_PESO
+--  DDL for Trigger CONTROL_PESO_CHIPEO
 --------------------------------------------------------
 
-CREATE OR REPLACE TRIGGER "OBLIGATORIO"."CONTROL_PESO" BEFORE INSERT OR UPDATE ON MADERACHIP
+  CREATE OR REPLACE TRIGGER "OBLIGATORIO"."CONTROL_PESO_CHIPEO" BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
 
 DECLARE
@@ -23,5 +23,6 @@ BEGIN
 	END IF;
 
 END;
+
 /
-ALTER TRIGGER "OBLIGATORIO"."CONTROL_PESO" ENABLE;
+ALTER TRIGGER "OBLIGATORIO"."CONTROL_PESO_CHIPEO" ENABLE;

@@ -1,13 +1,13 @@
 --------------------------------------------------------
---  File created - Sunday-June-03-2018   
+--  File created - Wednesday-June-06-2018   
 --------------------------------------------------------
 --------------------------------------------------------
---  DDL for Trigger CONTROL_CALIDAD
+--  DDL for Trigger CONTROL_CALIDAD_CHIPEO
 --------------------------------------------------------
 
-CREATE OR REPLACE TRIGGER "OBLIGATORIO"."CONTROL_CALIDAD" BEFORE INSERT OR UPDATE ON MADERACHIP
+  CREATE OR REPLACE TRIGGER "OBLIGATORIO"."CONTROL_CALIDAD_CHIPEO" BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
- follows CONTROL_PESO
+ follows CONTROL_PESO_CHIPEO
 DECLARE
 	v_peso_chip NUMBER(10);
 	v_peso_madera NUMBER(10);
@@ -32,5 +32,6 @@ BEGIN
 	END IF;
 
 END;
+
 /
-ALTER TRIGGER "OBLIGATORIO"."CONTROL_CALIDAD" ENABLE;
+ALTER TRIGGER "OBLIGATORIO"."CONTROL_CALIDAD_CHIPEO" ENABLE;
