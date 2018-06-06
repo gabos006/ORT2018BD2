@@ -47,6 +47,9 @@ BEGIN
 
 END;
 
+/*********************************/
+
+
 CREATE OR REPLACE TRIGGER actualizar_peso AFTER INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
 
@@ -56,5 +59,23 @@ BEGIN
 
     SELECT SUM(m.PESOMADERALOTE) INTO v_peso_suma FROM MADERACHIP m WHERE m.LOTE = :NEW.LOTE;
     UPDATE LOTEMADERA SET PESOACTUAL = v_peso_suma WHERE IDLOTE = :NEW.LOTE;
+
+END;
+
+/*********************************/
+
+
+create or replace TRIGGER control_capataz_chipeo BEFORE INSERT OR UPDATE ON MADERACHIP
+For Each Row
+
+DECLARE
+	v_cijefe NUMBER(10);
+BEGIN
+
+SELECT e.CIJEFE INTO v_cijefe FROM EMPLEADO e WHERE e.CI = :NEW.EMPLEADO;
+
+IF(v_cijefe = NULL) THEN
+    Raise_Application_Error (-20003, 'Los chips deben ser llevados por capataces');
+END IF;
 
 END;
