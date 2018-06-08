@@ -26,23 +26,23 @@ CREATE TABLE EMPLEADO
 (
     CI NUMBER(10) PRIMARY KEY,
     NOMBRECOMPLETO VARCHAR2(50),
-    TELEFONO NUMBER(10),
-    CELULAR NUMBER(10),
+    TELEFONO VARCHAR2(10),
+    CELULAR VARCHAR2(10),
     DIRECCION VARCHAR2(50),
-    ESTCIVIL VARCHAR2(1),
+    ESTCIVIL VARCHAR2(1) CHECK (ESTCIVIL IN ('S','C')),
     SUELDONOM NUMBER(10),
     OFICIO VARCHAR2(10),
     SECTOR VARCHAR2(10),
     TIENEHIJOS VARCHAR2(1) CHECK (TIENEHIJOS IN ('S','N')),
     PUESTO VARCHAR2(10),
-    CIJEFE NUMBER(8) DEFAULT NULL REFERENCES EMPLEADO
+    CIJEFE NUMBER(10) DEFAULT NULL REFERENCES EMPLEADO
 );
 
 CREATE TABLE PROVEEDOR
 (
     EMAIL VARCHAR2(50) PRIMARY KEY,
     NOMBRE VARCHAR2(50),
-    TELEFONO NUMBER(10),
+    TELEFONO VARCHAR2(10),
     RUT VARCHAR2(20)  DEFAULT NULL 
 );
 
@@ -59,15 +59,6 @@ CREATE TABLE LOTEMADERA
 
 CREATE SEQUENCE LOTEMADERA_ID_SEQ START WITH 1;
 
-CREATE OR REPLACE TRIGGER LOTEMADERA_ID BEFORE INSERT ON LOTEMADERA
-FOR EACH ROW
-
-BEGIN
-    SELECT LOTEMADERA_ID_SEQ.NEXTVAL
-    INTO :new.id
-    FROM dual;
-END;
-
 CREATE TABLE MADERACHIP 
 (
     ID NUMBER(10) PRIMARY KEY,
@@ -80,15 +71,6 @@ CREATE TABLE MADERACHIP
 
 CREATE SEQUENCE MADERACHIP_ID_SEQ START WITH 1;
 
-CREATE OR REPLACE TRIGGER MADERACHIP_ID BEFORE INSERT ON MADERACHIP
-FOR EACH ROW
-
-BEGIN
-    SELECT MADERACHIP_ID_SEQ.NEXTVAL
-    INTO :new.id
-    FROM dual;
-END;
-
 CREATE TABLE COCCION
 (
     ID NUMBER(10) PRIMARY KEY,
@@ -98,15 +80,6 @@ CREATE TABLE COCCION
 );
 
 CREATE SEQUENCE COCCION_ID_SEQ START WITH 1;
-
-CREATE OR REPLACE TRIGGER COCCION_ID BEFORE INSERT ON COCCION
-FOR EACH ROW
-
-BEGIN
-    SELECT COCCION_ID_SEQ.NEXTVAL
-    INTO :new.id
-    FROM dual;
-END;
 
 CREATE TABLE ENERGIA 
 (
@@ -128,7 +101,7 @@ CREATE TABLE CLIENTE
 (
     EMAIL VARCHAR2(50) PRIMARY KEY,
     NOMBRE VARCHAR2(50),
-    TELEFONO NUMBER(10),
+    TELEFONO VARCHAR2(10),
     RUT VARCHAR2(20) DEFAULT NULL 
 );
 
@@ -147,6 +120,41 @@ CREATE TABLE STOCK
     CANTPHIDRO NUMBER(10) DEFAULT NULL,
     CANTACIDO NUMBER(10) DEFAULT NULL
 );
+
+/*****************************************************************************************************/
+---------------------------------------------- TRIGGERS ----------------------------------------------
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER COCCION_ID BEFORE INSERT ON COCCION
+FOR EACH ROW
+
+BEGIN
+    SELECT COCCION_ID_SEQ.NEXTVAL INTO :new.id FROM dual;
+END;
+/
+ALTER TRIGGER COCCION_ID ENABLE;
+
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER MADERACHIP_ID BEFORE INSERT ON MADERACHIP
+FOR EACH ROW
+
+BEGIN
+    SELECT MADERACHIP_ID_SEQ.NEXTVAL INTO :new.id FROM dual;
+END;
+/
+ALTER TRIGGER MADERACHIP_ID ENABLE;
+
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER LOTEMADERA_ID BEFORE INSERT ON LOTEMADERA
+FOR EACH ROW
+
+BEGIN
+    SELECT LOTEMADERA_ID_SEQ.NEXTVAL INTO :new.idLote FROM dual;
+END;
+/
+ALTER TRIGGER LOTEMADERA_ID ENABLE;
 
 /*****************************************************************************************************/
 
@@ -256,3 +264,13 @@ BEGIN
 END;
 /
 ALTER TRIGGER ACTUALIZAR_PESO_CHIPEO ENABLE;
+
+/*****************************************************************************************************/
+--------------------------------------------- PROCEDURES ---------------------------------------------
+/*****************************************************************************************************/
+
+
+
+
+
+COMMIT;
