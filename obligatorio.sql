@@ -1,3 +1,5 @@
+DROP TRIGGER MADERA_MALESTADO_ID;
+DROP SEQUENCE MADERA_MALESTADO_ID_SEQ;
 DROP TRIGGER COCCION_ID;
 DROP SEQUENCE COCCION_ID_SEQ;
 DROP TRIGGER MADERACHIP_ID;
@@ -11,6 +13,7 @@ DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
 
+DROP TABLE MADERA_MALESTADO;
 DROP TABLE STOCK;
 DROP TABLE VENTA;
 DROP TABLE CLIENTE;
@@ -121,6 +124,14 @@ CREATE TABLE STOCK
     CANTACIDO NUMBER(10) DEFAULT NULL
 );
 
+-- Tabla auxiliar para porder retomar el proceso de madera en mal estado en el ultimo registro recorrido
+CREATE TABLE MADERA_MALESTADO
+(
+    ID NUMBER(10) PRIMARY KEY,
+    LOTEID NUMBER(10)
+);
+CREATE SEQUENCE MADERA_MALESTADO_ID_SEQ START WITH 1;
+
 /*****************************************************************************************************/
 ---------------------------------------------- TRIGGERS ----------------------------------------------
 /*****************************************************************************************************/
@@ -147,6 +158,17 @@ ALTER TRIGGER MADERACHIP_ID ENABLE;
 
 /*****************************************************************************************************/
 
+CREATE OR REPLACE TRIGGER MADERA_MALESTADO_ID BEFORE INSERT ON MADERA_MALESTADO
+FOR EACH ROW
+
+BEGIN
+    SELECT MADERA_MALESTADO_ID_SEQ.NEXTVAL INTO :new.id FROM dual;
+END;
+/
+ALTER TRIGGER MADERA_MALESTADO_ID ENABLE;
+
+/*****************************************************************************************************/
+
 CREATE OR REPLACE TRIGGER LOTEMADERA_ID BEFORE INSERT ON LOTEMADERA
 FOR EACH ROW
 
@@ -155,6 +177,7 @@ BEGIN
 END;
 /
 ALTER TRIGGER LOTEMADERA_ID ENABLE;
+
 
 /*****************************************************************************************************/
 

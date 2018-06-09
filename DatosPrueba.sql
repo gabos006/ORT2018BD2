@@ -51,7 +51,7 @@ VALUES ('prov4@gmail.com','PROV4','213453459014','23483745');
 ----------------------------- LOTESMADERA -------------------------------
 **************************************************************************/
 INSERT INTO LOTEMADERA(EMAILPROVEEDOR,PESOINICIAL,ESTADO,FECHA,PESOACTUAL,CIRESPONSABLE) 
-VALUES ('prov1@gmail.com',1000,'S','01/12/2017',1000,12345678);
+VALUES ('prov1@gmail.com',1000,'S','15/12/2017',1000,12345678);
 
 INSERT INTO LOTEMADERA(EMAILPROVEEDOR,PESOINICIAL,ESTADO,FECHA,PESOACTUAL,CIRESPONSABLE) 
 VALUES ('prov2@gmail.com',10000,'S','30/06/2017',10000,34567890);
