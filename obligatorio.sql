@@ -1,3 +1,5 @@
+DROP TRIGGER CONTROL_CALIDAD_ID;
+DROP SEQUENCE CONTROL_CALIDAD_ID_SEQ;
 DROP TRIGGER MADERA_MALESTADO_ID;
 DROP SEQUENCE MADERA_MALESTADO_ID_SEQ;
 DROP TRIGGER COCCION_ID;
@@ -13,6 +15,7 @@ DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
 
+DROP TABLE CONTROL_CALIDAD;
 DROP TABLE MADERA_MALESTADO;
 DROP TABLE STOCK;
 DROP TABLE VENTA;
@@ -132,6 +135,14 @@ CREATE TABLE MADERA_MALESTADO
 );
 CREATE SEQUENCE MADERA_MALESTADO_ID_SEQ START WITH 1;
 
+-- Tabla auxiliar para realizar el control de calidad de la madera
+CREATE TABLE CONTROL_CALIDAD
+(
+    ID NUMBER(10) PRIMARY KEY,
+    FECHA DATE,
+    PORCENTAJE NUMBER(3)
+);
+CREATE SEQUENCE CONTROL_CALIDAD_ID_SEQ START WITH 1;
 /*****************************************************************************************************/
 ---------------------------------------------- TRIGGERS ----------------------------------------------
 /*****************************************************************************************************/
@@ -166,6 +177,17 @@ BEGIN
 END;
 /
 ALTER TRIGGER MADERA_MALESTADO_ID ENABLE;
+
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER CONTROL_CALIDAD_ID BEFORE INSERT ON CONTROL_CALIDAD
+FOR EACH ROW
+
+BEGIN
+    SELECT CONTROL_CALIDAD_ID_SEQ.NEXTVAL INTO :new.id FROM dual;
+END;
+/
+ALTER TRIGGER CONTROL_CALIDAD_ID ENABLE;
 
 /*****************************************************************************************************/
 
@@ -211,11 +233,11 @@ DECLARE
 	v_cijefe NUMBER(10);
 BEGIN
 
-SELECT e.CIJEFE INTO v_cijefe FROM EMPLEADO e WHERE e.CI = :NEW.EMPLEADO;
-
-IF(v_cijefe != NULL) THEN
-    Raise_Application_Error (-20003, 'Los chips deben ser llevados por capataces');
-END IF;
+    SELECT e.CIJEFE INTO v_cijefe FROM EMPLEADO e WHERE e.CI = :NEW.EMPLEADO;
+    
+    IF(v_cijefe != NULL) THEN
+        Raise_Application_Error (-20003, 'Los chips deben ser llevados por capataces');
+    END IF;
 
 END;
 /
@@ -230,7 +252,7 @@ DECLARE
 	v_peso_chip NUMBER(10);
 	v_peso_madera NUMBER(10);
 	v_porcentaje NUMBER(10);
-
+    v_control_id NUMBER(10);
 BEGIN
 
 	SELECT SUM(m.PESOCHIP) INTO v_peso_chip  FROM MADERACHIP m WHERE TRUNC(sysdate) = TRUNC(m.FECHA);
@@ -245,8 +267,20 @@ BEGIN
 	v_peso_madera := v_peso_madera + :NEW.PESOMADERALOTE;
 	v_porcentaje := v_peso_chip *  v_peso_madera / 100;
 
+    -- SI ESTOY POR DEBAJO DEL CONTROL DE CALIDAD AGREGO REGISTRO O MODIFICO EXISTENTE, SINO ELIMINO EL EXISTENTE.
 	IF  (v_porcentaje < 95) THEN
-		Raise_Application_Error (-20001, 'Fallo el control de calidad');
+        
+        -- BUSCO REGISTRO PARA SABER SI DAR DE ALTA O MODIFICAR
+        SELECT  NVL(ID,0) INTO v_control_id FROM CONTROL_CALIDAD WHERE FECHA = TRUNC(sysdate);
+        
+        IF v_control_id = 0 THEN
+            INSERT INTO CONTROL_CALIDAD(FECHA,PORCENTAJE) VALUES (TRUNC(sysdate),v_porcentaje);
+        ELSE
+            UPDATE CONTROL_CALIDAD SET PORCENTAJE = v_porcentaje WHERE ID = v_control_id;
+        END IF;
+		--Raise_Application_Error (-20001, 'Fallo el control de calidad');
+    ELSE
+        DELETE FROM CONTROL_CALIDAD WHERE FECHA = TRUNC(sysdate);
 	END IF;
 
 END;
