@@ -12,7 +12,7 @@ DROP SEQUENCE LOTEMADERA_ID_SEQ;
 DROP TRIGGER ACTUALIZAR_PESO_CHIPEO;
 DROP TRIGGER CONTROL_CALIDAD_CHIPEO;
 DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
-DROP TRIGGER CONTROL_PESO_CHIPEO;
+--DROP TRIGGER CONTROL_PESO_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
 
 DROP TABLE CONTROL_CALIDAD;
@@ -206,8 +206,26 @@ END;
 /
 ALTER TRIGGER LOTEMADERA_ID ENABLE;
 
-
 /*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER CONTROL_CAPATAZ_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
+FOR EACH ROW
+
+DECLARE
+	v_cijefe NUMBER(10);
+BEGIN
+
+    SELECT e.CIJEFE INTO v_cijefe FROM EMPLEADO e WHERE e.CI = :NEW.CIEMPLEADO;
+    
+    IF(v_cijefe != NULL) THEN
+        Raise_Application_Error (-20003, 'Los chips deben ser llevados por capataces');
+    END IF;
+
+END;
+/
+ALTER TRIGGER CONTROL_CAPATAZ_CHIPEO ENABLE;
+
+/*****************************************************************************************************
 
 CREATE OR REPLACE TRIGGER CONTROL_PESO_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
@@ -230,40 +248,39 @@ END;
 /
 ALTER TRIGGER CONTROL_PESO_CHIPEO ENABLE;
 
-/*****************************************************************************************************/
-
-CREATE OR REPLACE TRIGGER CONTROL_CAPATAZ_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
-For Each Row
-
-DECLARE
-	v_cijefe NUMBER(10);
-BEGIN
-
-    SELECT e.CIJEFE INTO v_cijefe FROM EMPLEADO e WHERE e.CI = :NEW.CIEMPLEADO;
-    
-    IF(v_cijefe != NULL) THEN
-        Raise_Application_Error (-20003, 'Los chips deben ser llevados por capataces');
-    END IF;
-
-END;
-/
-ALTER TRIGGER CONTROL_CAPATAZ_CHIPEO ENABLE;
-
-/*****************************************************************************************************/
+*****************************************************************************************************/
 
 CREATE OR REPLACE TRIGGER CONTROL_CALIDAD_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
- follows CONTROL_PESO_CHIPEO
+--FOLLOWS CONTROL_PESO_CHIPEO
 DECLARE
 	v_peso_chip NUMBER(10);
 	v_peso_madera NUMBER(10);
 	v_porcentaje NUMBER(10);
     v_control_id NUMBER(10);
+    v_peso_lote NUMBER(10);
 BEGIN
 
-	SELECT SUM(m.PESOCHIP) INTO v_peso_chip  FROM MADERACHIP m WHERE TRUNC(sysdate) = TRUNC(m.FECHA);
-	SELECT SUM(m.PESOMADERALOTE) INTO v_peso_madera FROM MADERACHIP m WHERE TRUNC(sysdate) = TRUNC(m.FECHA);
+    DBMS_OUTPUT.PUT_LINE('ENTRO AL TRIGGER');
 
+    -- CONTROLO EL PESO DEL LOTE
+    SELECT l.PESOACTUAL INTO v_peso_lote FROM LOTEMADERA l WHERE :NEW.LOTEID = l.IDLOTE;
+
+	IF UPDATING THEN 
+	  v_peso_lote := v_peso_lote + :OLD.PESOMADERALOTE;
+	END IF;  
+
+	IF (v_peso_lote < :NEW.PESOMADERALOTE) THEN
+		Raise_Application_Error (-20002, 'Fallo el control de peso');
+	END IF;
+
+    DBMS_OUTPUT.PUT_LINE('PASO CONTROL DE PESO LOTE');
+    
+	SELECT NVL(SUM(m.PESOCHIP),0) INTO v_peso_chip  FROM MADERACHIP m WHERE m.FECHA = CURRENT_DATE;
+	SELECT NVL(SUM(m.PESOMADERALOTE),0) INTO v_peso_madera FROM MADERACHIP m WHERE m.FECHA = CURRENT_DATE;
+
+    DBMS_OUTPUT.PUT_LINE(v_peso_chip || '--------' || v_peso_madera);
+    
 	IF UPDATING THEN 
 		v_peso_chip := v_peso_chip - :OLD.PESOCHIP;
 		v_peso_madera := v_peso_madera - :OLD.PESOMADERALOTE;
@@ -271,22 +288,28 @@ BEGIN
 
 	v_peso_chip := v_peso_chip + :NEW.PESOCHIP;
 	v_peso_madera := v_peso_madera + :NEW.PESOMADERALOTE;
-	v_porcentaje := v_peso_chip *  v_peso_madera / 100;
+	v_porcentaje := v_peso_chip * 100 / v_peso_madera;
+
+    DBMS_OUTPUT.PUT_LINE(v_peso_chip || '--------' || v_peso_madera || '--------' || v_porcentaje);
 
     -- SI ESTOY POR DEBAJO DEL CONTROL DE CALIDAD AGREGO REGISTRO O MODIFICO EXISTENTE, SINO ELIMINO EL EXISTENTE.
 	IF  (v_porcentaje < 95) THEN
         
+        DBMS_OUTPUT.PUT_LINE('ENTRO POR DEBAJO DE PORCENTAJE');
+        
         -- BUSCO REGISTRO PARA SABER SI DAR DE ALTA O MODIFICAR
-        SELECT  NVL(ID,0) INTO v_control_id FROM CONTROL_CALIDAD WHERE FECHA = TRUNC(sysdate);
+        SELECT  COUNT(*) INTO v_control_id FROM CONTROL_CALIDAD WHERE FECHA = CURRENT_DATE;
+        
+        DBMS_OUTPUT.PUT_LINE('LUEGO DE BUSCAR EN TABLA DE CONTROL DE CALIDAD');
         
         IF v_control_id = 0 THEN
-            INSERT INTO CONTROL_CALIDAD(FECHA,PORCENTAJE) VALUES (TRUNC(sysdate),v_porcentaje);
+            INSERT INTO CONTROL_CALIDAD(FECHA,PORCENTAJE) VALUES (CURRENT_DATE,v_porcentaje);
         ELSE
-            UPDATE CONTROL_CALIDAD SET PORCENTAJE = v_porcentaje WHERE ID = v_control_id;
+            UPDATE CONTROL_CALIDAD SET PORCENTAJE = v_porcentaje WHERE FECHA = CURRENT_DATE;
         END IF;
 		--Raise_Application_Error (-20001, 'Fallo el control de calidad');
     ELSE
-        DELETE FROM CONTROL_CALIDAD WHERE FECHA = TRUNC(sysdate);
+        DELETE FROM CONTROL_CALIDAD WHERE FECHA = CURRENT_DATE;
 	END IF;
 
 END;
