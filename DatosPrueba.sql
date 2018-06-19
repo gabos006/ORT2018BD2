@@ -65,6 +65,14 @@ VALUES ('prov4@gmail.com',5000,'S','17/03/2017',5000,34567890);
 INSERT INTO LOTEMADERA(EMAILPROVEEDOR,PESOINICIAL,ESTADO,FECHA,PESOACTUAL,CIRESPONSABLE) 
 VALUES ('prov1@gmail.com',2500,'S','08/10/2017',2500,12345678);
 
+/**************************************************************************
+----------------------------- MADERACHIP -------------------------------
+**************************************************************************/
+INSERT INTO MADERACHIP(LOTEID,CIEMPLEADO,PESOMADERALOTE,PESOCHIP,FECHA)
+VALUES(1,12345678,650,630,'02/02/2018');
+
+INSERT INTO MADERACHIP(LOTEID,CIEMPLEADO,PESOMADERALOTE,PESOCHIP,FECHA)
+VALUES(1,12345678,350,340,'02/02/2018');
 
 
 COMMIT;
