@@ -248,10 +248,9 @@ BEGIN
 		Raise_Application_Error (-20002, 'Fallo el control de peso');
 	END IF;
     
+    -- CONTROL DE CALIDAD DEL 95%
 	SELECT NVL(SUM(m.PESOCHIP),0) INTO v_peso_chip  FROM MADERACHIP m WHERE TRUNC(m.FECHA) = TRUNC(CURRENT_DATE);
 	SELECT NVL(SUM(m.PESOMADERALOTE),0) INTO v_peso_madera FROM MADERACHIP m WHERE TRUNC(m.FECHA) = TRUNC(CURRENT_DATE);
-
-    DBMS_OUTPUT.PUT_LINE(v_peso_chip || '--------' || v_peso_madera);
     
 	IF UPDATING THEN 
 		v_peso_chip := v_peso_chip - :OLD.PESOCHIP;
@@ -262,27 +261,18 @@ BEGIN
 	v_peso_madera := v_peso_madera + :NEW.PESOMADERALOTE;
 	v_porcentaje := v_peso_chip * 100 / v_peso_madera;
 
-    DBMS_OUTPUT.PUT_LINE(v_peso_chip || '--------' || v_peso_madera || '--------' || v_porcentaje);
-
     -- SI ESTOY POR DEBAJO DEL CONTROL DE CALIDAD AGREGO REGISTRO O MODIFICO EXISTENTE, SINO ELIMINO EL EXISTENTE.
 	IF  (v_porcentaje < 95) THEN
-        
-        DBMS_OUTPUT.PUT_LINE('ENTRO POR DEBAJO DE PORCENTAJE');
         
         -- BUSCO REGISTRO PARA SABER SI DAR DE ALTA O MODIFICAR
         SELECT  COUNT(*) INTO v_control_id FROM CONTROL_CALIDAD WHERE TRUNC(FECHA) = TRUNC(SYSDATE);
         
-        DBMS_OUTPUT.PUT_LINE('LUEGO DE BUSCAR EN TABLA DE CONTROL DE CALIDAD');
-        
         IF v_control_id = 0 THEN
-            DBMS_OUTPUT.PUT_LINE('ENTRO EN INSERT');
             INSERT INTO CONTROL_CALIDAD(FECHA,PORCENTAJE) VALUES (CURRENT_DATE,v_porcentaje);
         ELSE
-            DBMS_OUTPUT.PUT_LINE('ENTRO EN UPDATE');
             UPDATE CONTROL_CALIDAD SET PORCENTAJE = v_porcentaje WHERE TRUNC(FECHA) = TRUNC(SYSDATE);
         END IF;
     ELSE
-        DBMS_OUTPUT.PUT_LINE('ENTRO EN DELETE');
         DELETE FROM CONTROL_CALIDAD WHERE TRUNC(FECHA) = TRUNC(SYSDATE);
 	END IF;
 END;
