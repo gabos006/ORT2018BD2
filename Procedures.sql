@@ -56,7 +56,18 @@ CREATE OR REPLACE PROCEDURE GENERACION_ENERGIA(FECHA_DESDE IN DATE, FECHA_HASTA 
 BEGIN
     DECLARE
         
+        cant_madera_lote NUMBER(10);
+        cant_madera_chip NUMBER(10);
+        
         -- AGRUPO POR FECHA
+        CURSOR ENERGIA IS
+            SELECT E.FECHA AS FECHA,SUM(KW) AS KW
+            FROM ENERGIA E
+            WHERE E.FECHA >= FECHA_DESDE AND E.FECHA <= FECHA_HASTA
+            GROUP BY E.FECHA
+            ORDER BY E.FECHA;
+
+       /* -- AGRUPO POR FECHA
         CURSOR GRUPO IS
             SELECT E.FECHA AS FECHA,SUM(KW) AS KW,SUM(M.PESOMADERALOTE) AS PESOMADERA,SUM(M.PESOCHIP) AS PESOCHIP 
             FROM ENERGIA E, COCCION C, MADERACHIP M
@@ -66,14 +77,23 @@ BEGIN
                   AND M.FECHA >= FECHA_DESDE AND M.FECHA <= FECHA_HASTA
             GROUP BY E.FECHA
             ORDER BY E.FECHA;
-
+*/
     BEGIN
     
         DBMS_OUTPUT.PUT_LINE('FECHA' || '     ' || 'CANT. KW' || '     ' || 'PESO LOTE' || '     ' || 'PESO CHIP');
         
-        FOR itemGrupo IN GRUPO
+        FOR itemEnergia IN ENERGIA
         LOOP
-            DBMS_OUTPUT.PUT_LINE(rpad(itemGrupo.FECHA,12) || rpad(itemGrupo.KW,12) || rpad(itemGrupo.PESOMADERA,12) || rpad(itemGrupo.PESOCHIP,12));        
+            
+            SELECT SUM(M.PESOMADERALOTE) INTO cant_madera_lote
+            FROM MADERACHIP M
+            WHERE M.FECHA = itemEnergia.FECHA;
+        
+            SELECT SUM(C.PESO) INTO cant_madera_chip
+            FROM COCCION C
+            WHERE C.FECHA = itemEnergia.FECHA;
+            
+            DBMS_OUTPUT.PUT_LINE(rpad(itemEnergia.FECHA,12) || rpad(itemEnergia.KW,12) || rpad(cant_madera_lote,16) || rpad(cant_madera_chip,12));        
         END LOOP;
         
     END;

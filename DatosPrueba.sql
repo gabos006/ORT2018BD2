@@ -48,6 +48,12 @@ INSERT INTO PROVEEDOR(EMAIL,NOMBRE,RUT,TELEFONO)
 VALUES ('prov4@gmail.com','PROV4','213453459014','23483745');
 
 /**************************************************************************
+----------------------------- PAPEL -------------------------------
+**************************************************************************/
+INSERT INTO STOCK(STOCKID,CANTPHIDRO,CANTACIDO)
+VALUES(1,10000,10000);
+
+/**************************************************************************
 ----------------------------- LOTESMADERA -------------------------------
 **************************************************************************/
 INSERT INTO LOTEMADERA(EMAILPROVEEDOR,PESOINICIAL,ESTADO,FECHA,PESOACTUAL,CIRESPONSABLE) 
@@ -118,5 +124,23 @@ VALUES(4,'21/06/2018',3780);
 
 INSERT INTO ENERGIA(IDENERGIA,FECHA,KW)
 VALUES(5,'22/06/2018',4400);
+
+/**************************************************************************
+----------------------------- PAPEL -------------------------------
+**************************************************************************/
+INSERT INTO PAPEL(IDPAPEL,PHIDRO,ACIDO,PESO,FECHA)
+VALUES(1,100,100,315,'20/06/2018');
+
+INSERT INTO PAPEL(IDPAPEL,PHIDRO,ACIDO,PESO,FECHA)
+VALUES(2,60,60,100,'20/06/2018');
+
+INSERT INTO PAPEL(IDPAPEL,PHIDRO,ACIDO,PESO,FECHA)
+VALUES(3,500,500,2500,'21/06/2018');
+
+INSERT INTO PAPEL(IDPAPEL,PHIDRO,ACIDO,PESO,FECHA)
+VALUES(4,300,300,990,'21/06/2018');
+
+INSERT INTO PAPEL(IDPAPEL,PHIDRO,ACIDO,PESO,FECHA)
+VALUES(5,350,350,1100,'22/06/2018');
 
 COMMIT;
