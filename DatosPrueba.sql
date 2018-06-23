@@ -2,6 +2,9 @@
 ----------------------------- CLIENTES -------------------------------
 **************************************************************************/
 
+ALTER SESSION 
+SET NLS_DATE_FORMAT = 'DD-MM-YYYY HH24:MI:SS'; 
+
 INSERT INTO CLIENTE(EMAIL,RUT,NOMBRE,TELEFONO) 
 VALUES ('abc@gmail.com','213456740012','ABS S.R.L','25678903');
 
