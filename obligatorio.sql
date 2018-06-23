@@ -14,6 +14,7 @@ DROP TRIGGER CONTROL_CALIDAD_CHIPEO;
 DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
 DROP TRIGGER CONTROL_DESCUENTO_CLIENTE;
+DROP TRIGGER CONTROL_STOCK;
 
 
 DROP TABLE CONTROL_CALIDAD;
@@ -217,40 +218,32 @@ END;
 /
 ALTER TRIGGER LOTEMADERA_ID ENABLE;
 
-
 /*****************************************************************************************************/
 
-  CREATE OR REPLACE TRIGGER CONTROL_DESCUENTO_CLIENTE BEFORE INSERT ON VENTA
-For Each Row
-
+CREATE OR REPLACE TRIGGER CONTROL_DESCUENTO_CLIENTE BEFORE INSERT ON VENTA
+FOR EACH ROW
 
 DECLARE
     v_suma_precios NUMBER(10);
     v_precio_original NUMBER(10);
 BEGIN
-
-v_precio_original := :new.PRECIO;
-
-IF(v_precio_original >= 1000) THEN
-    :new.PRECIO := :new.PRECIO - (v_precio_original * 0.05);
-END IF;
-
-SELECT SUM(v.PRECIO) INTO  v_suma_precios FROM VENTA v WHERE EXTRACT(MONTH FROM v.FECHA)= EXTRACT(MONTH FROM :new.FECHA) AND 
-EXTRACT(YEAR FROM v.FECHA)= EXTRACT(YEAR FROM :new.FECHA);
-
-IF(v_suma_precios >= 10000) THEN
-    :new.PRECIO := :new.PRECIO - (v_precio_original * 0.08);
-END IF;
-
+    v_precio_original := :new.PRECIO;
+    
+    IF(v_precio_original >= 1000) THEN
+        :new.PRECIO := :new.PRECIO - (v_precio_original * 0.05);
+    END IF;
+    
+    SELECT SUM(v.PRECIO) INTO  v_suma_precios FROM VENTA v WHERE EXTRACT(MONTH FROM v.FECHA)= EXTRACT(MONTH FROM :new.FECHA) AND 
+    EXTRACT(YEAR FROM v.FECHA)= EXTRACT(YEAR FROM :new.FECHA);
+    
+    IF(v_suma_precios >= 10000) THEN
+        :new.PRECIO := :new.PRECIO - (v_precio_original * 0.08);
+    END IF;
 END;
-
-
 /
 ALTER TRIGGER CONTROL_DESCUENTO_CLIENTE ENABLE;
 
-
 /*****************************************************************************************************/
-
 
 CREATE OR REPLACE TRIGGER CONTROL_CAPATAZ_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
@@ -370,6 +363,35 @@ BEGIN
 END;
 /
 ALTER TRIGGER ACTUALIZAR_PESO_CHIPEO ENABLE;
+
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER CONTROL_STOCK BEFORE INSERT ON PAPEL
+FOR EACH ROW
+DECLARE
+    v_cant_phidro NUMBER(10);
+    v_cant_acido NUMBER(10);
+BEGIN
+    SELECT CANTPHIDRO INTO v_cant_phidro
+    FROM STOCK WHERE STOCKID = 1;
+    
+    SELECT CANTACIDO INTO v_cant_acido
+    FROM STOCK WHERE STOCKID = 1;
+    
+    IF (:NEW.PHIDRO > v_cant_phidro) THEN
+        RAISE_APPLICATION_ERROR(-20002,'Stock de hidrogengo insuficiente');
+    END IF;
+    
+    IF :NEW.ACIDO > v_cant_acido THEN
+        RAISE_APPLICATION_ERROR(-20003,'Stock de acido insuficiente');
+    END IF;
+    
+    -- ACTUALIZO EL STOCK
+    UPDATE STOCK SET CANTPHIDRO = CANTPHIDRO - :NEW.PHIDRO, CANTACIDO = CANTACIDO - :NEW.ACIDO WHERE STOCKID = 1;
+    
+END;
+/
+ALTER TRIGGER CONTROL_STOCK ENABLE;
 
 /*****************************************************************************************************/
 --------------------------------------------- PROCEDURES ---------------------------------------------
