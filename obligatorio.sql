@@ -13,6 +13,7 @@ DROP TRIGGER ACTUALIZAR_PESO_CHIPEO;
 DROP TRIGGER CONTROL_CALIDAD_CHIPEO;
 DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
+DROP TRIGGER CONTROL_DESCUENTO_CLIENTE;
 
 DROP TABLE CONTROL_CALIDAD;
 DROP TABLE MADERA_MALESTADO;
@@ -206,7 +207,40 @@ END;
 /
 ALTER TRIGGER LOTEMADERA_ID ENABLE;
 
+
 /*****************************************************************************************************/
+
+  CREATE OR REPLACE TRIGGER CONTROL_DESCUENTO_CLIENTE BEFORE INSERT ON VENTA
+For Each Row
+
+
+DECLARE
+    v_suma_precios NUMBER(10);
+    v_precio_original NUMBER(10);
+BEGIN
+
+v_precio_original := :new.PRECIO;
+
+IF(v_precio_original >= 1000) THEN
+    :new.PRECIO := :new.PRECIO - (v_precio_original * 0.05);
+END IF;
+
+SELECT SUM(v.PRECIO) INTO  v_suma_precios FROM VENTA v WHERE EXTRACT(MONTH FROM v.FECHA)= EXTRACT(MONTH FROM :new.FECHA) AND 
+EXTRACT(YEAR FROM v.FECHA)= EXTRACT(YEAR FROM :new.FECHA);
+
+IF(v_suma_precios >= 10000) THEN
+    :new.PRECIO := :new.PRECIO - (v_precio_original * 0.08);
+END IF;
+
+END;
+
+
+/
+ALTER TRIGGER CONTROL_DESCUENTO_CLIENTE ENABLE;
+
+
+/*****************************************************************************************************/
+
 
 CREATE OR REPLACE TRIGGER CONTROL_CAPATAZ_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
