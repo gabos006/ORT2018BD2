@@ -1,3 +1,6 @@
+-- NECESARIO POR ERROR EN EL ALTA DE UN TRIGGER
+ALTER SESSION SET PLSCOPE_SETTINGS = 'IDENTIFIERS:NONE';
+
 DROP TRIGGER CONTROL_CALIDAD_ID;
 DROP SEQUENCE CONTROL_CALIDAD_ID_SEQ;
 DROP TRIGGER MADERA_MALESTADO_ID;
@@ -8,16 +11,12 @@ DROP TRIGGER MADERACHIP_ID;
 DROP SEQUENCE MADERACHIP_ID_SEQ;
 DROP TRIGGER LOTEMADERA_ID;
 DROP SEQUENCE LOTEMADERA_ID_SEQ;
-
 DROP TRIGGER LOGPROCEDURES_ID;
 DROP SEQUENCE LOGPROCEDURES_ID_SEQ;
-
 DROP TRIGGER VENTA_ID;
 DROP SEQUENCE VENTA_ID_SEQ;
-
 DROP TRIGGER BONO_EMPLEADO_ID;
 DROP SEQUENCE BONO_EMPLEADO_ID_SEQ;
-
 
 DROP TRIGGER ACTUALIZAR_PESO_CHIPEO;
 DROP TRIGGER CONTROL_CALIDAD_CHIPEO;
@@ -25,7 +24,6 @@ DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
 DROP TRIGGER CONTROL_DESCUENTO_CLIENTE;
 DROP TRIGGER CONTROL_STOCK;
-
 
 DROP TABLE CONTROL_CALIDAD;
 DROP TABLE MADERA_MALESTADO;
@@ -296,10 +294,6 @@ ALTER TRIGGER LOTEMADERA_ID ENABLE;
 
 /*****************************************************************************************************/
 
-
-
-/*****************************************************************************************************/
-
 CREATE OR REPLACE TRIGGER CONTROL_CAPATAZ_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
 
@@ -452,29 +446,25 @@ DECLARE
     v_cant_phidro NUMBER(10);
     v_cant_acido NUMBER(10);
 BEGIN
+
     SELECT CANTPHIDRO INTO v_cant_phidro
     FROM STOCK WHERE STOCKID = 1;
     
     SELECT CANTACIDO INTO v_cant_acido
     FROM STOCK WHERE STOCKID = 1;
-    
+  
     IF (:NEW.PHIDRO > v_cant_phidro) THEN
-        RAISE_APPLICATION_ERROR(-20002,'Stock de hidrogengo insuficiente');
+        Raise_Application_Error (-20003,'Stock de hidrogengo insuficiente');
     END IF;
     
     IF :NEW.ACIDO > v_cant_acido THEN
-        RAISE_APPLICATION_ERROR(-20003,'Stock de acido insuficiente');
+        Raise_Application_Error (-20004,'Stock de acido insuficiente');
     END IF;
     
     -- ACTUALIZO EL STOCK
-    UPDATE STOCK SET CANTPHIDRO = CANTPHIDRO - :NEW.PHIDRO, CANTACIDO = CANTACIDO - :NEW.ACIDO WHERE STOCKID = 1;
-    
+    UPDATE STOCK SET CANTPHIDRO = CANTPHIDRO - :NEW.PHIDRO, CANTACIDO = CANTACIDO - :NEW.ACIDO WHERE STOCKID = 1;    
 END;
 /
 ALTER TRIGGER CONTROL_STOCK ENABLE;
-
-/*****************************************************************************************************/
---------------------------------------------- PROCEDURES ---------------------------------------------
-/*****************************************************************************************************/
 
 COMMIT;
