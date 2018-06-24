@@ -1,6 +1,12 @@
+/*****************************************************************************************************/
+--------------------------------------------- PROCEDURES ---------------------------------------------
+/*****************************************************************************************************/
+
+
 DROP PROCEDURE MADERA_ALMACENADA;
 DROP PROCEDURE MADERA_MAL_ESTADO;
 DROP PROCEDURE GENERACION_ENERGIA;
+DROP PROCEDURE PRODUCCION_PAPEL;
 
 -- REQUERIMIENTO MADERA ALMACENADA
 CREATE OR REPLACE PROCEDURE MADERA_ALMACENADA AS
