@@ -113,7 +113,7 @@ END;
 
 /
 
-create or replace PROCEDURE RESUMEN_VENTAS(EMPLEADO IN NUMBER, MES IN NUMBER DEFAULT 0) AS
+create or replace PROCEDURE RESUMEN_VENTAS(CI_EMPLEADO IN NUMBER, MES IN NUMBER DEFAULT 0) AS
 BEGIN
     DECLARE
         v_fecha DATE;
@@ -126,40 +126,46 @@ BEGIN
             AND EXTRACT(MONTH from v_fecha) = EXTRACT(MONTH from v.FECHA)
             AND EXTRACT(YEAR from v_fecha) = EXTRACT(YEAR from v.FECHA)
             ;
-            
+
         v_vendedores_rec VENDEDORES%ROWTYPE;
 
         CURSOR INFO IS
             SELECT * FROM INFO_VENTA iv WHERE iv.CI_VENDEDOR = v_VENDEDORES_rec.CI;
-            
-            
+
+
     BEGIN
- 
+
         if(MES = 0) THEN
             SELECT  ADD_MONTHS(SYSDATE,-1) into v_fecha FROM dual;
         ELSE
             SELECT  ADD_MONTHS(SYSDATE, (MES - v_mes_actual)) into v_fecha FROM dual;
         END IF;
+
+
+        /***********Crear Log**********/
         
+        INSERT INTO LOGPROCEDURES(FECHA, CI_EMPLEADO, RAZON) VALUES(SYSDATE, CI_EMPLEADO, 'RESUMEN_VENTAS');
+        
+
         DBMS_OUTPUT.PUT_LINE('Empleado:');
-        
+
         OPEN  VENDEDORES;
-        
+
         LOOP
             FETCH VENDEDORES into v_vendedores_rec;
-            
+
             DBMS_OUTPUT.PUT_LINE(rpad(v_vendedores_rec.NOMBRECOMPLETO,12));
-            
+
             DBMS_OUTPUT.PUT_LINE(rpad('Email Cliente',12) || rpad('Precio Final',12) || rpad('Bonos Obtenidos',12));
 
             FOR info_venta IN INFO
             LOOP
                 DBMS_OUTPUT.PUT_LINE(rpad(info_venta.EMAIL_CLIENTE,12) || rpad(info_venta.PRECIO_FINAL,12) || rpad(NVL(info_venta.BONO_EMPLEADO,0),12));
             END LOOP;
-            
+
             EXIT WHEN VENDEDORES%NOTFOUND;
         END LOOP;
         CLOSE VENDEDORES;
-        
+
     END;
 END;
