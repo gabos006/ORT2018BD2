@@ -2,6 +2,7 @@ DROP PROCEDURE MADERA_ALMACENADA;
 DROP PROCEDURE MADERA_MAL_ESTADO;
 DROP PROCEDURE GENERACION_ENERGIA;
 DROP PROCEDURE RESUMEN_VENTAS;
+DROP PROCEDURE RESUMEN_CLIENTES;
 
 -- REQUERIMIENTO MADERA ALMACENADA
 CREATE OR REPLACE PROCEDURE MADERA_ALMACENADA AS
@@ -167,5 +168,71 @@ BEGIN
         END LOOP;
         CLOSE VENDEDORES;
 
+    END;
+END;
+
+/
+create or replace PROCEDURE RESUMEN_CLIENTES
+(
+CI_EMPLEADO IN NUMBER,
+FECHA_DESDE IN DATE DEFAULT TRUNC (SYSDATE , 'YEAR'),
+FECHA_HASTA IN DATE DEFAULT TRUNC(ADD_MONTHS(SYSDATE,-1))
+) AS
+BEGIN
+
+    DECLARE
+
+    v_mes_actual NUMBER;
+    CURSOR CLIENTES IS
+        SELECT C.Email, c.Nombre  FROM 
+            (
+                SELECT v.EMAIL_CLIENTE FROM VENTA v, CLIENTE c
+                WHERE v.EMAIL_CLIENTE = c.EMAIL 
+                AND EXTRACT(MONTH from v.FECHA) >= EXTRACT(MONTH from FECHA_DESDE)
+                AND EXTRACT(MONTH from v.FECHA) <= EXTRACT(MONTH from FECHA_HASTA)
+                AND EXTRACT(YEAR from v.FECHA) >= EXTRACT(YEAR from FECHA_DESDE)
+                AND EXTRACT(YEAR from v.FECHA) <= EXTRACT(YEAR from FECHA_HASTA)
+                GROUP BY v.EMAIL_CLIENTE
+                ORDER BY SUM(v.PRECIO) DESC
+            ) lista, CLIENTE c
+        WHERE Lista.Email_Cliente = C.Email
+        AND ROWNUM =10;
+        
+    v_clientes_rec CLIENTES%ROWTYPE;
+        
+    CURSOR INFO IS
+        SELECT SUM(i.PRECIO_FINAL) AS COMPRAS, SUM(i.DESCUENTO_CLIENTE) as DESCUENTOS FROM INFO_VENTA i
+        WHERE i.EMAIL_CLIENTE = v_clientes_rec.Email AND (EXTRACT(MONTH from i.FECHA)) = v_mes_actual ;
+        
+    v_info_rec INFO%ROWTYPE;
+    BEGIN
+
+        OPEN  CLIENTES;
+
+        LOOP
+            FETCH CLIENTES into v_clientes_rec;
+
+            DBMS_OUTPUT.PUT_LINE(rpad(v_clientes_rec.NOMBRE,12));
+            DBMS_OUTPUT.PUT_LINE(rpad('Total Compras',12) || rpad('Descuentos',12));
+            FOR mes IN (EXTRACT(MONTH from FECHA_DESDE))..(EXTRACT(MONTH from FECHA_HASTA)) LOOP
+                v_mes_actual := mes;
+                DBMS_OUTPUT.PUT_LINE (to_char(mes, 'MONTH'));
+                OPEN INFO;
+                LOOP
+                    FETCH INFO into v_info_rec;
+                    DBMS_OUTPUT.PUT_LINE(rpad(v_info_rec.COMPRAS,12) || rpad(v_info_rec.DESCUENTOS,12));
+
+                    EXIT WHEN INFO%NOTFOUND;
+                END LOOP;
+                CLOSE INFO;
+            END LOOP;
+        EXIT WHEN CLIENTES%NOTFOUND;
+        END LOOP;
+        CLOSE CLIENTES;
+
+        /***********Crear Log**********/
+
+        INSERT INTO LOGPROCEDURES(FECHA, CI_EMPLEADO, RAZON) VALUES(SYSDATE, CI_EMPLEADO, 'RESUMEN_CLIENTES');
+        COMMIT;
     END;
 END;
