@@ -20,7 +20,7 @@ DROP TRIGGER ACTUALIZAR_PESO_CHIPEO;
 DROP TRIGGER CONTROL_CALIDAD_CHIPEO;
 DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
-DROP TRIGGER CONTROL_DESCUENTO_CLIENTE;
+DROP TRIGGER CONTROL_VENTA;
 DROP TRIGGER CONTROL_STOCK;
 
 
@@ -179,6 +179,7 @@ CREATE TABLE INFO_VENTA
     PRECIO_FINAL NUMBER(10) NOT NULL,
 	BONO_EMPLEADO  NUMBER(10),
 	DESCUENTO_CLIENTE NUMBER(10),
+    FECHA DATE NOT NULL,
     CONSTRAINT info_venta_bono_fk FOREIGN KEY(ID_VENTA,EMAIL_CLIENTE, CI_VENDEDOR, ID_PAPEL) REFERENCES VENTA(ID,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL),
     CONSTRAINT info_venta_pk PRIMARY KEY(ID_VENTA,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL)
 );
@@ -367,28 +368,52 @@ ALTER TRIGGER CONTROL_CALIDAD_CHIPEO ENABLE;
 
 /*****************************************************************************************************/
 
-CREATE OR REPLACE TRIGGER CONTROL_DESCUENTO_CLIENTE BEFORE INSERT ON VENTA
+create or replace TRIGGER CONTROL_VENTA BEFORE INSERT ON VENTA
 FOR EACH ROW
 
 DECLARE
     v_suma_precios NUMBER(10);
-    v_precio_original NUMBER(10);
+    v_precio_descuento NUMBER(10);
+    v_descuentos_cliente NUMBER(10);
+    v_bonos_empleado NUMBER(10);
 BEGIN
-    v_precio_original := :new.PRECIO;
-    
-    IF(v_precio_original >= 1000) THEN
-        :new.PRECIO := :new.PRECIO - (v_precio_original * 0.05);
+
+    IF(:NEW.PRECIO >= 1000) THEN
+        v_precio_descuento := v_precio_descuento - (:NEW.PRECIO * 0.08);
+        v_bonos_empleado := v_bonos_empleado + (:NEW.PRECIO * 0.02);
     END IF;
-    
-    SELECT SUM(v.PRECIO) INTO  v_suma_precios FROM VENTA v WHERE EXTRACT(MONTH FROM v.FECHA)= EXTRACT(MONTH FROM :new.FECHA) AND 
-    EXTRACT(YEAR FROM v.FECHA)= EXTRACT(YEAR FROM :new.FECHA);
+
+    SELECT SUM(v.PRECIO) INTO  v_suma_precios FROM VENTA v 
+    WHERE EXTRACT(MONTH FROM v.FECHA)= EXTRACT(MONTH FROM :new.FECHA) 
+    AND EXTRACT(YEAR FROM v.FECHA)= EXTRACT(YEAR FROM :new.FECHA)
+    AND v.EMAIL_CLIENTE = :NEW.EMAIL_CLIENTE;
     
     IF(v_suma_precios >= 10000) THEN
-        :new.PRECIO := :new.PRECIO - (v_precio_original * 0.08);
+        v_precio_descuento := v_precio_descuento - (:NEW.PRECIO * 0.05);
     END IF;
+    
+    IF INSERTING THEN
+        INSERT INTO INFO_VENTA(ID_VENTA,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL,PRECIO_FINAL,BONO_EMPLEADO,DESCUENTO_CLIENTE,FECHA)
+        VALUES(:NEW.ID, :NEW.EMAIL_CLIENTE,:NEW.CI_VENDEDOR, :NEW.ID_PAPEL,v_precio_descuento, v_bonos_empleado, v_descuentos_cliente,:NEW.FECHA);
+    END IF;
+    
+    IF UPDATING THEN
+        UPDATE INFO_VENTA SET
+        ID_VENTA = :NEW.ID,
+        EMAIL_CLIENTE = :NEW.EMAIL_CLIENTE,
+        CI_VENDEDOR = :NEW.CI_VENDEDOR,
+        ID_PAPEL = :NEW.ID_PAPEL,
+        PRECIO_FINAL = v_precio_descuento,
+        BONO_EMPLEADO = v_bonos_empleado,
+        DESCUENTO_CLIENTE = v_descuentos_cliente,
+        FECHA = :NEW.FECHA
+        WHERE ID_VENTA = :OLD.ID;
+    END IF;
+    
 END;
+
 /
-ALTER TRIGGER CONTROL_DESCUENTO_CLIENTE ENABLE;
+ALTER TRIGGER CONTROL_VENTA ENABLE;
 
 /*****************************************************************************************************/
 
