@@ -360,6 +360,81 @@ ALTER TRIGGER CONTROL_CALIDAD_CHIPEO ENABLE;
 
 /*****************************************************************************************************/
 
+CREATE OR REPLACE TRIGGER ACTUALIZAR_PESO_CHIPEO
+INSTEAD OF INSERT OR UPDATE ON VIEW_MADERACHIP
+FOR EACH ROW
+
+DECLARE
+	v_peso_suma NUMBER(10);
+BEGIN
+
+	IF INSERTING THEN
+        INSERT INTO MADERACHIP(ID_LOTE,CI_EMPLEADO,PESOMADERALOTE,PESOCHIP,FECHA)
+        VALUES(:NEW.ID_LOTE,:NEW.CI_EMPLEADO,:NEW.PESOMADERALOTE,:NEW.PESOCHIP,:NEW.FECHA);
+    ELSE
+        UPDATE MADERACHIP SET ID_LOTE = :NEW.ID_LOTE,
+                              CI_EMPLEADO = :NEW.CI_EMPLEADO,
+                              PESOMADERALOTE = :NEW.PESOMADERALOTE,
+                              PESOCHIP = :NEW.PESOCHIP,
+                              FECHA = :NEW.FECHA
+        WHERE ID = :NEW.ID;
+    END IF;
+    
+    SELECT NVL(SUM(m.PESOMADERALOTE),0) INTO v_peso_suma FROM MADERACHIP m WHERE m.ID_LOTE = :NEW.ID_LOTE;
+	UPDATE LOTEMADERA SET PESOACTUAL = PESOINICIAL - v_peso_suma WHERE ID = :NEW.ID_LOTE;
+END;
+/
+ALTER TRIGGER ACTUALIZAR_PESO_CHIPEO ENABLE;
+
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER CONTROL_PESO_COCCION BEFORE INSERT OR UPDATE ON COCCION
+For Each Row
+
+DECLARE
+	v_peso_chip NUMBER(10);
+BEGIN
+
+    SELECT m.PESOCHIP INTO v_peso_chip FROM MADERACHIP m WHERE m.ID = :NEW.ID_CHIP;
+    
+    IF(:NEW.PESO > v_peso_chip) THEN
+        Raise_Application_Error (-20002, 'Fallo el control de peso');
+    END IF;
+
+END;
+/
+ALTER TRIGGER CONTROL_PESO_COCCION ENABLE;
+
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER CONTROL_STOCK BEFORE INSERT ON PAPEL
+FOR EACH ROW
+DECLARE
+    v_cant_phidro NUMBER(10);
+    v_cant_acido NUMBER(10);
+BEGIN
+    SELECT CANTPHIDRO INTO v_cant_phidro
+    FROM STOCK WHERE ID = 1;
+    
+    SELECT CANTACIDO INTO v_cant_acido
+    FROM STOCK WHERE ID = 1;
+    
+    IF (:NEW.PHIDRO > v_cant_phidro) THEN
+        RAISE_APPLICATION_ERROR(-20002,'Stock de hidrogengo insuficiente');
+    END IF;
+    
+    IF :NEW.ACIDO > v_cant_acido THEN
+        RAISE_APPLICATION_ERROR(-20003,'Stock de acido insuficiente');
+    END IF;
+    
+    -- ACTUALIZO EL STOCK
+    UPDATE STOCK SET CANTPHIDRO = CANTPHIDRO - :NEW.PHIDRO, CANTACIDO = CANTACIDO - :NEW.ACIDO WHERE ID = 1;
+END;
+/
+ALTER TRIGGER CONTROL_STOCK ENABLE;
+
+/*****************************************************************************************************/
+
 create or replace TRIGGER CONTROL_VENTA BEFORE INSERT ON VENTA
 FOR EACH ROW
 
@@ -407,82 +482,6 @@ END;
 ALTER TRIGGER CONTROL_VENTA ENABLE;
 
 /*****************************************************************************************************/
-
-CREATE OR REPLACE TRIGGER CONTROL_PESO_COCCION BEFORE INSERT OR UPDATE ON COCCION
-For Each Row
-
-DECLARE
-	v_peso_chip NUMBER(10);
-BEGIN
-
-    SELECT m.PESOCHIP INTO v_peso_chip FROM MADERACHIP m WHERE m.ID = :NEW.ID_CHIP;
-    
-    IF(:NEW.PESO > v_peso_chip) THEN
-        Raise_Application_Error (-20002, 'Fallo el control de peso');
-    END IF;
-
-END;
-/
-ALTER TRIGGER CONTROL_PESO_COCCION ENABLE;
-
-/*****************************************************************************************************/
-
-CREATE OR REPLACE TRIGGER ACTUALIZAR_PESO_CHIPEO
-INSTEAD OF INSERT OR UPDATE ON VIEW_MADERACHIP
-FOR EACH ROW
-
-DECLARE
-	v_peso_suma NUMBER(10);
-BEGIN
-
-	IF INSERTING THEN
-        INSERT INTO MADERACHIP(ID_LOTE,CI_EMPLEADO,PESOMADERALOTE,PESOCHIP,FECHA)
-        VALUES(:NEW.ID_LOTE,:NEW.CI_EMPLEADO,:NEW.PESOMADERALOTE,:NEW.PESOCHIP,:NEW.FECHA);
-    ELSE
-        UPDATE MADERACHIP SET ID_LOTE = :NEW.ID_LOTE,
-                              CI_EMPLEADO = :NEW.CI_EMPLEADO,
-                              PESOMADERALOTE = :NEW.PESOMADERALOTE,
-                              PESOCHIP = :NEW.PESOCHIP,
-                              FECHA = :NEW.FECHA
-        WHERE ID = :NEW.ID;
-    END IF;
-    
-    SELECT NVL(SUM(m.PESOMADERALOTE),0) INTO v_peso_suma FROM MADERACHIP m WHERE m.ID_LOTE = :NEW.ID_LOTE;
-	UPDATE LOTEMADERA SET PESOACTUAL = PESOINICIAL - v_peso_suma WHERE ID = :NEW.ID_LOTE;
-END;
-/
-ALTER TRIGGER ACTUALIZAR_PESO_CHIPEO ENABLE;
-
-/*****************************************************************************************************/
-
-CREATE OR REPLACE TRIGGER CONTROL_STOCK BEFORE INSERT ON PAPEL
-FOR EACH ROW
-DECLARE
-    v_cant_phidro NUMBER(10);
-    v_cant_acido NUMBER(10);
-BEGIN
-    SELECT CANTPHIDRO INTO v_cant_phidro
-    FROM STOCK WHERE ID = 1;
-    
-    SELECT CANTACIDO INTO v_cant_acido
-    FROM STOCK WHERE ID = 1;
-    
-    IF (:NEW.PHIDRO > v_cant_phidro) THEN
-        RAISE_APPLICATION_ERROR(-20002,'Stock de hidrogengo insuficiente');
-    END IF;
-    
-    IF :NEW.ACIDO > v_cant_acido THEN
-        RAISE_APPLICATION_ERROR(-20003,'Stock de acido insuficiente');
-    END IF;
-    
-    -- ACTUALIZO EL STOCK
-    UPDATE STOCK SET CANTPHIDRO = CANTPHIDRO - :NEW.PHIDRO, CANTACIDO = CANTACIDO - :NEW.ACIDO WHERE ID = 1;
-END;
-/
-ALTER TRIGGER CONTROL_STOCK ENABLE;
-
-
-
 
 COMMIT;
 
