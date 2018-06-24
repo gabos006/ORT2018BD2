@@ -435,7 +435,7 @@ ALTER TRIGGER CONTROL_STOCK ENABLE;
 
 /*****************************************************************************************************/
 
-create or replace TRIGGER CONTROL_VENTA BEFORE INSERT ON VENTA
+create or replace TRIGGER CONTROL_VENTA AFTER INSERT ON VENTA
 FOR EACH ROW
 
 DECLARE
@@ -444,9 +444,11 @@ DECLARE
     v_descuentos_cliente NUMBER(10);
     v_bonos_empleado NUMBER(10);
 BEGIN
-
+	v_precio_descuento := :NEW.PRECIO;
+	
     IF(:NEW.PRECIO >= 1000) THEN
         v_precio_descuento := v_precio_descuento - (:NEW.PRECIO * 0.08);
+		v_descuentos_cliente := v_descuentos_cliente  + (:NEW.PRECIO * 0.08);
         v_bonos_empleado := v_bonos_empleado + (:NEW.PRECIO * 0.02);
     END IF;
 
@@ -457,6 +459,7 @@ BEGIN
     
     IF(v_suma_precios >= 10000) THEN
         v_precio_descuento := v_precio_descuento - (:NEW.PRECIO * 0.05);
+		v_descuentos_cliente := v_descuentos_cliente  + (:NEW.PRECIO * 0.05);
     END IF;
     
     IF INSERTING THEN
