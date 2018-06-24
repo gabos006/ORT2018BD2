@@ -8,13 +8,10 @@ DROP TRIGGER MADERACHIP_ID;
 DROP SEQUENCE MADERACHIP_ID_SEQ;
 DROP TRIGGER LOTEMADERA_ID;
 DROP SEQUENCE LOTEMADERA_ID_SEQ;
-
 DROP TRIGGER LOGPROCEDURES_ID;
 DROP SEQUENCE LOGPROCEDURES_ID_SEQ;
-
 DROP TRIGGER VENTA_ID;
 DROP SEQUENCE VENTA_ID_SEQ;
-
 
 DROP TRIGGER ACTUALIZAR_PESO_CHIPEO;
 DROP TRIGGER CONTROL_CALIDAD_CHIPEO;
@@ -22,7 +19,6 @@ DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
 DROP TRIGGER CONTROL_VENTA;
 DROP TRIGGER CONTROL_STOCK;
-
 
 DROP TABLE CONTROL_CALIDAD;
 DROP TABLE MADERA_MALESTADO;
@@ -40,6 +36,9 @@ DROP TABLE LOTEMADERA;
 DROP TABLE PROVEEDOR;
 DROP TABLE EMPLEADO;
 
+/*****************************************************************************************************/
+---------------------------------------------- TABLES ----------------------------------------------
+/*****************************************************************************************************/
 
 CREATE TABLE EMPLEADO
 (
@@ -70,7 +69,6 @@ CREATE TABLE LOGPROCEDURES
 );
 
 CREATE SEQUENCE LOGPROCEDURES_ID_SEQ START WITH 1;
-
 
 CREATE TABLE PROVEEDOR
 (
@@ -169,7 +167,6 @@ CREATE TABLE VENTA
 
 CREATE SEQUENCE VENTA_ID_SEQ START WITH 1;
 
-
 CREATE TABLE INFO_VENTA
 (
     ID_VENTA NUMBER(10) NOT NULL,
@@ -183,8 +180,6 @@ CREATE TABLE INFO_VENTA
     CONSTRAINT info_venta_bono_fk FOREIGN KEY(ID_VENTA,EMAIL_CLIENTE, CI_VENDEDOR, ID_PAPEL) REFERENCES VENTA(ID,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL),
     CONSTRAINT info_venta_pk PRIMARY KEY(ID_VENTA,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL)
 );
-
-
 
 CREATE TABLE STOCK
 (
@@ -209,6 +204,7 @@ CREATE TABLE CONTROL_CALIDAD
     PORCENTAJE NUMBER(3)
 );
 CREATE SEQUENCE CONTROL_CALIDAD_ID_SEQ START WITH 1;
+
 /*****************************************************************************************************/
 ---------------------------------------------- TRIGGERS ----------------------------------------------
 /*****************************************************************************************************/
@@ -290,10 +286,6 @@ ALTER TRIGGER LOTEMADERA_ID ENABLE;
 
 /*****************************************************************************************************/
 
-
-
-/*****************************************************************************************************/
-
 CREATE OR REPLACE TRIGGER CONTROL_CAPATAZ_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
 
@@ -303,7 +295,7 @@ BEGIN
 
     SELECT e.CI_JEFE INTO v_CI_JEFE FROM EMPLEADO e WHERE e.CI = :NEW.CI_EMPLEADO;
     
-    IF(v_CI_JEFE != NULL) THEN
+    IF NOT(v_CI_JEFE IS NULL) THEN
         Raise_Application_Error (-20003, 'Los chips deben ser llevados por capataces');
     END IF;
 
@@ -411,7 +403,6 @@ BEGIN
     END IF;
     
 END;
-
 /
 ALTER TRIGGER CONTROL_VENTA ENABLE;
 
@@ -424,11 +415,11 @@ DECLARE
 	v_peso_chip NUMBER(10);
 BEGIN
 
-SELECT m.PESOCHIP INTO v_peso_chip FROM MADERACHIP m WHERE m.ID = :NEW.ID_CHIP;
-
-IF(:NEW.PESO > v_peso_chip) THEN
-	Raise_Application_Error (-20002, 'Fallo el control de peso');
-END IF;
+    SELECT m.PESOCHIP INTO v_peso_chip FROM MADERACHIP m WHERE m.ID = :NEW.ID_CHIP;
+    
+    IF(:NEW.PESO > v_peso_chip) THEN
+        Raise_Application_Error (-20002, 'Fallo el control de peso');
+    END IF;
 
 END;
 /
@@ -486,14 +477,10 @@ BEGIN
     
     -- ACTUALIZO EL STOCK
     UPDATE STOCK SET CANTPHIDRO = CANTPHIDRO - :NEW.PHIDRO, CANTACIDO = CANTACIDO - :NEW.ACIDO WHERE ID = 1;
-    
 END;
 /
 ALTER TRIGGER CONTROL_STOCK ENABLE;
 
-/*****************************************************************************************************/
---------------------------------------------- PROCEDURES ---------------------------------------------
-/*****************************************************************************************************/
 
 
 
