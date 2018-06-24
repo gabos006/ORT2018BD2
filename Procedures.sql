@@ -1,20 +1,21 @@
 DROP PROCEDURE MADERA_ALMACENADA;
 DROP PROCEDURE MADERA_MAL_ESTADO;
 DROP PROCEDURE GENERACION_ENERGIA;
+DROP PROCEDURE RESUMEN_VENTAS;
 
 -- REQUERIMIENTO MADERA ALMACENADA
 CREATE OR REPLACE PROCEDURE MADERA_ALMACENADA AS
 BEGIN
     DECLARE
         CURSOR MADERA IS
-            SELECT L.IDLOTE, L.FECHA, L.PESOACTUAL, L.EMAILPROVEEDOR FROM LOTEMADERA L
+            SELECT L.ID, L.FECHA, L.PESOACTUAL, L.EMAIL_PROVEEDOR FROM LOTEMADERA L
             WHERE L.ESTADO = 'S'
             ORDER BY L.FECHA ASC;
     BEGIN
         DBMS_OUTPUT.PUT_LINE('ID LOTE' || '     ' || 'FECHA LOTE' || '     ' || 'PESO ACTUAL' || '     ' || 'EMAIL PROV');
         FOR itemLote IN MADERA
         LOOP
-            DBMS_OUTPUT.PUT_LINE(rpad(itemLote.IDLOTE,12) || rpad(itemLote.FECHA,15) || rpad(itemLote.PESOACTUAL,16) || rpad(itemLote.EMAILPROVEEDOR,20));
+            DBMS_OUTPUT.PUT_LINE(rpad(itemLote.ID,12) || rpad(itemLote.FECHA,15) || rpad(itemLote.PESOACTUAL,16) || rpad(itemLote.EMAIL_PROVEEDOR,20));
         END LOOP;
     END;
 END;
@@ -31,16 +32,16 @@ BEGIN
         
         -- ME GUARDO TODOS LOS LOTES QUE ESTAN EN BUEN ESTADO
         CURSOR MADERA IS
-            SELECT L.IDLOTE, L.FECHA FROM LOTEMADERA L
+            SELECT L.ID, L.FECHA FROM LOTEMADERA L
             WHERE L.ESTADO = 'S';
     BEGIN
         FECHALIMITE := ADD_MONTHS(FECHA_ENTRADA,-6);
-        SELECT NVL(MAX(LOTEID),0) INTO ULTREGISTRO FROM MADERA_MALESTADO;
+        SELECT NVL(MAX(ID_LOTE),0) INTO ULTREGISTRO FROM MADERA_MALESTADO;
         
         FOR itemLote IN MADERA
         LOOP
-            UPDATE LOTEMADERA SET ESTADO = 'N' WHERE FECHA < FECHALIMITE AND IDLOTE >= ULTREGISTRO;
-            INSERT INTO MADERA_MALESTADO(LOTEID) VALUES (itemLote.IDLOTE);
+            UPDATE LOTEMADERA SET ESTADO = 'N' WHERE FECHA < FECHALIMITE AND ID >= ULTREGISTRO;
+            INSERT INTO MADERA_MALESTADO(ID_LOTE) VALUES (itemLote.ID);
         END LOOP;
         
         EXECUTE IMMEDIATE 'TRUNCATE TABLE MADERA_MALESTADO';
@@ -110,8 +111,55 @@ BEGIN
     END;
 END;
 
--- TESTS
---EXECUTE MADERA_ALMACENADA();
---EXECUTE MADERA_MAL_ESTADO(CURRENT_DATE);
---EXECUTE GENERACION_ENERGIA('18/06/2018','23/06/2018');
---EXECUTE PRODUCCION_PAPEL('18/06/2018','23/06/2018');
+/
+
+create or replace PROCEDURE RESUMEN_VENTAS(EMPLEADO IN NUMBER, MES IN NUMBER DEFAULT 0) AS
+BEGIN
+    DECLARE
+        v_fecha DATE;
+        v_mes_actual NUMBER;
+
+        CURSOR VENDEDORES IS
+            SELECT e.CI, e.NOMBRECOMPLETO  FROM (SELECT DISTINCT v.CI_VENDEDOR FROM VENTA v) lista, EMPLEADO e, VENTA v
+            WHERE e.CI = lista.CI_VENDEDOR 
+            AND e.CI = v.CI_VENDEDOR 
+            AND EXTRACT(MONTH from v_fecha) = EXTRACT(MONTH from v.FECHA)
+            AND EXTRACT(YEAR from v_fecha) = EXTRACT(YEAR from v.FECHA)
+            ;
+            
+        v_vendedores_rec VENDEDORES%ROWTYPE;
+
+        CURSOR INFO IS
+            SELECT * FROM INFO_VENTA iv WHERE iv.CI_VENDEDOR = v_VENDEDORES_rec.CI;
+            
+            
+    BEGIN
+ 
+        if(MES = 0) THEN
+            SELECT  ADD_MONTHS(SYSDATE,-1) into v_fecha FROM dual;
+        ELSE
+            SELECT  ADD_MONTHS(SYSDATE, (MES - v_mes_actual)) into v_fecha FROM dual;
+        END IF;
+        
+        DBMS_OUTPUT.PUT_LINE('Empleado:');
+        
+        OPEN  VENDEDORES;
+        
+        LOOP
+            FETCH VENDEDORES into v_vendedores_rec;
+            
+            DBMS_OUTPUT.PUT_LINE(rpad(v_vendedores_rec.NOMBRECOMPLETO,12));
+            
+            DBMS_OUTPUT.PUT_LINE(rpad('Email Cliente',12) || rpad('Precio Final',12) || rpad('Bonos Obtenidos',12));
+
+            FOR info_venta IN INFO
+            LOOP
+                DBMS_OUTPUT.PUT_LINE(rpad(info_venta.EMAIL_CLIENTE,12) || rpad(info_venta.PRECIO_FINAL,12) || rpad(NVL(info_venta.BONO_EMPLEADO,0),12));
+            END LOOP;
+            
+            EXIT WHEN VENDEDORES%NOTFOUND;
+        END LOOP;
+        CLOSE VENDEDORES;
+        
+    END;
+END;
