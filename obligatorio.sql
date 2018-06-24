@@ -140,11 +140,13 @@ CREATE TABLE ENERGIA
 
 CREATE TABLE PAPEL
 (
-    ID NUMBER(10) NOT NULL REFERENCES COCCION(ID) PRIMARY KEY,
+    ID NUMBER(10) NOT NULL,
     PHIDRO NUMBER(10) CHECK (PHIDRO > 0),
     ACIDO NUMBER(10) CHECK (ACIDO > 0),
 	PESO NUMBER(10) CHECK(PESO > 0),
-    FECHA DATE NOT NULL
+    FECHA DATE NOT NULL,
+    CONSTRAINT coccion_papel_fk FOREIGN KEY(ID) REFERENCES COCCION(ID),
+    CONSTRAINT papel_pk PRIMARY KEY(ID)
 );
 
 CREATE TABLE CLIENTE
@@ -285,10 +287,6 @@ BEGIN
 END;
 /
 ALTER TRIGGER LOTEMADERA_ID ENABLE;
-
-/*****************************************************************************************************/
-
-
 
 /*****************************************************************************************************/
 
@@ -464,12 +462,6 @@ BEGIN
 END;
 /
 ALTER TRIGGER CONTROL_STOCK ENABLE;
-
-/*****************************************************************************************************/
---------------------------------------------- PROCEDURES ---------------------------------------------
-/*****************************************************************************************************/
-
-
 
 COMMIT;
 
