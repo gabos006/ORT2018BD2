@@ -1,5 +1,5 @@
 ALTER SESSION 
-SET NLS_DATE_FORMAT = 'DD-MM-YYYY HH24:MI:SS'; 
+SET NLS_DATE_FORMAT = 'DD-MM-YYYY'; 
 
 /**************************************************************************
 ----------------------------- CLIENTES -------------------------------
@@ -145,9 +145,10 @@ VALUES(4,300,300,990,'21/06/2018');
 INSERT INTO PAPEL(ID,PHIDRO,ACIDO,PESO,FECHA)
 VALUES(5,350,350,1100,'22/06/2018');
 
-INSERT INTO VENTA(EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL,PRECIO,FECHA)
+/**************************************************************************
+----------------------------- VENTA -------------------------------
+**************************************************************************/
+INSERT INTO VIEW_VENTA(EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL,PRECIO,FECHA)
 VALUES('abc@gmail.com',23456789,1,1500,'20/06/2018');
-
-
 
 COMMIT;
