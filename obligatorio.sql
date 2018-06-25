@@ -231,16 +231,6 @@ END;
 /
 ALTER TRIGGER VENTA_ID ENABLE;
 
-/*****************************************************************************************************/
-
-CREATE OR REPLACE TRIGGER LOGPROCEDURES_ID BEFORE INSERT ON VENTA
-FOR EACH ROW
-
-BEGIN
-    SELECT LOGPROCEDURES_ID_SEQ.NEXTVAL INTO :new.id FROM dual;
-END;
-/
-ALTER TRIGGER LOGPROCEDURES_ID ENABLE;
 
 /*****************************************************************************************************/
 
@@ -252,6 +242,17 @@ BEGIN
 END;
 /
 ALTER TRIGGER MADERACHIP_ID ENABLE;
+
+/*****************************************************************************************************/
+
+CREATE OR REPLACE TRIGGER LOGPROCEDURES_ID BEFORE INSERT ON LOGPROCEDURES
+FOR EACH ROW
+
+BEGIN
+    SELECT LOGPROCEDURES_ID_SEQ.NEXTVAL INTO :new.id FROM dual;
+END;
+/
+ALTER TRIGGER LOGPROCEDURES_ID ENABLE;
 
 /*****************************************************************************************************/
 
