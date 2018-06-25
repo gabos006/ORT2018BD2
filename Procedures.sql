@@ -151,7 +151,8 @@ BEGIN
 
         LOOP
             FETCH VENDEDORES into v_vendedores_rec;
-
+            EXIT WHEN VENDEDORES%NOTFOUND;
+            
             DBMS_OUTPUT.PUT_LINE('Empleado: ' || rpad(v_vendedores_rec.NOMBRECOMPLETO,50));
             
             
@@ -159,12 +160,10 @@ BEGIN
 
             FOR info_venta IN INFO
             LOOP
-                DBMS_OUTPUT.PUT_LINE(rpad(info_venta.EMAIL_CLIENTE,25) || rpad(info_venta.PRECIO_FINAL,15) || rpad(info_venta.BONO_EMPLEADO,0),12);
+                DBMS_OUTPUT.PUT_LINE(rpad(info_venta.EMAIL_CLIENTE,25) || rpad(info_venta.PRECIO_FINAL,17) || rpad(info_venta.BONO_EMPLEADO,12));
             END LOOP;
             
             DBMS_OUTPUT.PUT_LINE('   ');
-            
-            EXIT WHEN VENDEDORES%NOTFOUND;
         END LOOP;
         CLOSE VENDEDORES;
 
