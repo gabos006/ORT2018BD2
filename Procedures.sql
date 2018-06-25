@@ -135,7 +135,6 @@ BEGIN
             SELECT * FROM INFO_VENTA iv WHERE iv.CI_VENDEDOR = v_VENDEDORES_rec.CI
             AND EXTRACT(MONTH from IV.FECHA) = EXTRACT(MONTH from v_fecha);
 
-
     BEGIN
 
         if(MES = 0) THEN
@@ -171,7 +170,6 @@ BEGIN
 
     END;
 END;
-
 
 -- Funciona como DELIMITER
 /

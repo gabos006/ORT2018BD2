@@ -447,7 +447,9 @@ DECLARE
     v_bonos_empleado NUMBER(10);
 BEGIN
 	v_precio_descuento := :NEW.PRECIO;
-	
+	v_descuentos_cliente := 0;
+    v_bonos_empleado := 0;
+    
     IF(:NEW.PRECIO >= 1000) THEN
         v_precio_descuento := v_precio_descuento - (:NEW.PRECIO * 0.08);
 		v_descuentos_cliente := v_descuentos_cliente  + (:NEW.PRECIO * 0.08);
