@@ -140,7 +140,7 @@ BEGIN
         if(MES = 0) THEN
             SELECT  ADD_MONTHS(SYSDATE,-1) into v_fecha FROM dual;
         ELSE
-            SELECT  ADD_MONTHS(SYSDATE, (MES - EXTRACT(MONTH from v_fecha))) into v_fecha FROM dual;
+            SELECT  ADD_MONTHS(SYSDATE, (MES - EXTRACT(MONTH from SYSDATE))) into v_fecha FROM dual;
         END IF;
 
         /***********Crear Log**********/
@@ -154,8 +154,6 @@ BEGIN
             EXIT WHEN VENDEDORES%NOTFOUND;
             
             DBMS_OUTPUT.PUT_LINE('Empleado: ' || rpad(v_vendedores_rec.NOMBRECOMPLETO,50));
-            
-            
             DBMS_OUTPUT.PUT_LINE('EMAIL CLIENTE' || '            ' || 'PRECIO FINAL' || '     ' || 'BONOS OBTENIDOS');
 
             FOR info_venta IN INFO
