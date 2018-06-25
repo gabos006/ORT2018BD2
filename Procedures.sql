@@ -195,7 +195,7 @@ BEGIN
                 ORDER BY SUM(v.PRECIO) DESC
             ) lista, CLIENTE c
         WHERE Lista.Email_Cliente = C.Email
-        AND ROWNUM =10;
+        AND ROWNUM <=10;
         
     v_clientes_rec CLIENTES%ROWTYPE;
         
@@ -215,7 +215,7 @@ BEGIN
             DBMS_OUTPUT.PUT_LINE(rpad('Total Compras',12) || rpad('Descuentos',12));
             FOR mes IN (EXTRACT(MONTH from FECHA_DESDE))..(EXTRACT(MONTH from FECHA_HASTA)) LOOP
                 v_mes_actual := mes;
-                DBMS_OUTPUT.PUT_LINE (to_char(mes, 'MONTH'));
+                DBMS_OUTPUT.PUT_LINE (v_mes_actual);
                 OPEN INFO;
                 LOOP
                     FETCH INFO into v_info_rec;
