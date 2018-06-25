@@ -115,7 +115,7 @@ END;
 -- Funciona como DELIMITER
 /
 
-CREATE OR REPLACE PROCEDURE RESUMEN_VENTAS(CI_EMPLEADO IN NUMBER, MES IN NUMBER DEFAULT 0) AS
+create or replace PROCEDURE RESUMEN_VENTAS(CI_EMPLEADO IN NUMBER, MES IN NUMBER DEFAULT 0) AS
 BEGIN
     DECLARE
         v_fecha DATE;
@@ -132,7 +132,8 @@ BEGIN
         v_vendedores_rec VENDEDORES%ROWTYPE;
 
         CURSOR INFO IS
-            SELECT * FROM INFO_VENTA iv WHERE iv.CI_VENDEDOR = v_VENDEDORES_rec.CI;
+            SELECT * FROM INFO_VENTA iv WHERE iv.CI_VENDEDOR = v_VENDEDORES_rec.CI
+            AND EXTRACT(MONTH from IV.FECHA) = EXTRACT(MONTH from v_fecha);
 
 
     BEGIN
@@ -140,14 +141,14 @@ BEGIN
         if(MES = 0) THEN
             SELECT  ADD_MONTHS(SYSDATE,-1) into v_fecha FROM dual;
         ELSE
-            SELECT  ADD_MONTHS(SYSDATE, (MES - v_mes_actual)) into v_fecha FROM dual;
+            SELECT  ADD_MONTHS(SYSDATE, (MES - EXTRACT(MONTH from v_fecha))) into v_fecha FROM dual;
         END IF;
 
 
         /***********Crear Log**********/
-        
+
         INSERT INTO LOGPROCEDURES(FECHA, CI_EMPLEADO, RAZON) VALUES(SYSDATE, CI_EMPLEADO, 'RESUMEN_VENTAS');
-        
+
 
         DBMS_OUTPUT.PUT_LINE('Empleado:');
 
@@ -171,6 +172,7 @@ BEGIN
 
     END;
 END;
+
 
 -- Funciona como DELIMITER
 /
