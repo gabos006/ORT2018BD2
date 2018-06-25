@@ -8,27 +8,24 @@ DROP TRIGGER MADERACHIP_ID;
 DROP SEQUENCE MADERACHIP_ID_SEQ;
 DROP TRIGGER LOTEMADERA_ID;
 DROP SEQUENCE LOTEMADERA_ID_SEQ;
-
 DROP TRIGGER LOGPROCEDURES_ID;
 DROP SEQUENCE LOGPROCEDURES_ID_SEQ;
-
 DROP TRIGGER VENTA_ID;
 DROP SEQUENCE VENTA_ID_SEQ;
-
 
 DROP TRIGGER ACTUALIZAR_PESO_CHIPEO;
 DROP TRIGGER CONTROL_CALIDAD_CHIPEO;
 DROP TRIGGER CONTROL_CAPATAZ_CHIPEO;
 DROP TRIGGER CONTROL_PESO_COCCION;
-DROP TRIGGER CONTROL_DESCUENTO_CLIENTE;
+DROP TRIGGER CONTROL_VENTA;
 DROP TRIGGER CONTROL_STOCK;
-
 
 DROP TABLE CONTROL_CALIDAD;
 DROP TABLE MADERA_MALESTADO;
 DROP TABLE INFO_VENTA;
 DROP TABLE LOGPROCEDURES;
 DROP TABLE STOCK;
+DROP VIEW VIEW_VENTA;
 DROP TABLE VENTA;
 DROP TABLE CLIENTE;
 DROP TABLE PAPEL;
@@ -40,6 +37,9 @@ DROP TABLE LOTEMADERA;
 DROP TABLE PROVEEDOR;
 DROP TABLE EMPLEADO;
 
+/*****************************************************************************************************/
+---------------------------------------------- TABLES ----------------------------------------------
+/*****************************************************************************************************/
 
 CREATE TABLE EMPLEADO
 (
@@ -64,12 +64,12 @@ CREATE TABLE LOGPROCEDURES
     ID NUMBER(10),
     FECHA DATE,
     CI_EMPLEADO NUMBER(10) NOT NULL REFERENCES EMPLEADO,
+    RAZON VARCHAR2(20) NOT NULL,
     CONSTRAINT log_empleado_fk FOREIGN KEY(CI_EMPLEADO) REFERENCES EMPLEADO(CI),
     CONSTRAINT log_pk PRIMARY KEY(ID, CI_EMPLEADO)
 );
 
 CREATE SEQUENCE LOGPROCEDURES_ID_SEQ START WITH 1;
-
 
 CREATE TABLE PROVEEDOR
 (
@@ -145,8 +145,8 @@ CREATE TABLE PAPEL
     ACIDO NUMBER(10) CHECK (ACIDO > 0),
 	PESO NUMBER(10) CHECK(PESO > 0),
     FECHA DATE NOT NULL,
-    CONSTRAINT coccion_papel_fk FOREIGN KEY(ID) REFERENCES COCCION(ID),
-    CONSTRAINT papel_pk PRIMARY KEY(ID)
+	CONSTRAINT coccion_papel_fk FOREIGN KEY(ID) REFERENCES COCCION(ID),
+	CONSTRAINT papel_pk PRIMARY KEY(ID)
 );
 
 CREATE TABLE CLIENTE
@@ -170,6 +170,9 @@ CREATE TABLE VENTA
 
 CREATE SEQUENCE VENTA_ID_SEQ START WITH 1;
 
+CREATE VIEW VIEW_VENTA AS
+SELECT ID,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL,PRECIO,FECHA
+FROM VENTA;
 
 CREATE TABLE INFO_VENTA
 (
@@ -180,11 +183,10 @@ CREATE TABLE INFO_VENTA
     PRECIO_FINAL NUMBER(10) NOT NULL,
 	BONO_EMPLEADO  NUMBER(10),
 	DESCUENTO_CLIENTE NUMBER(10),
+    FECHA DATE NOT NULL,
     CONSTRAINT info_venta_bono_fk FOREIGN KEY(ID_VENTA,EMAIL_CLIENTE, CI_VENDEDOR, ID_PAPEL) REFERENCES VENTA(ID,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL),
     CONSTRAINT info_venta_pk PRIMARY KEY(ID_VENTA,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL)
 );
-
-
 
 CREATE TABLE STOCK
 (
@@ -209,6 +211,7 @@ CREATE TABLE CONTROL_CALIDAD
     PORCENTAJE NUMBER(3)
 );
 CREATE SEQUENCE CONTROL_CALIDAD_ID_SEQ START WITH 1;
+
 /*****************************************************************************************************/
 ---------------------------------------------- TRIGGERS ----------------------------------------------
 /*****************************************************************************************************/
@@ -299,7 +302,7 @@ BEGIN
 
     SELECT e.CI_JEFE INTO v_CI_JEFE FROM EMPLEADO e WHERE e.CI = :NEW.CI_EMPLEADO;
     
-    IF(v_CI_JEFE != NULL) THEN
+    IF NOT(v_CI_JEFE IS NULL) THEN
         Raise_Application_Error (-20003, 'Los chips deben ser llevados por capataces');
     END IF;
 
@@ -311,7 +314,7 @@ ALTER TRIGGER CONTROL_CAPATAZ_CHIPEO ENABLE;
 
 CREATE OR REPLACE TRIGGER CONTROL_CALIDAD_CHIPEO BEFORE INSERT OR UPDATE ON MADERACHIP
 FOR EACH ROW
---FOLLOWS CONTROL_PESO_CHIPEO
+
 DECLARE
 	v_peso_chip NUMBER(10);
 	v_peso_madera NUMBER(10);
@@ -364,50 +367,6 @@ ALTER TRIGGER CONTROL_CALIDAD_CHIPEO ENABLE;
 
 /*****************************************************************************************************/
 
-CREATE OR REPLACE TRIGGER CONTROL_DESCUENTO_CLIENTE BEFORE INSERT ON VENTA
-FOR EACH ROW
-
-DECLARE
-    v_suma_precios NUMBER(10);
-    v_precio_original NUMBER(10);
-BEGIN
-    v_precio_original := :new.PRECIO;
-    
-    IF(v_precio_original >= 1000) THEN
-        :new.PRECIO := :new.PRECIO - (v_precio_original * 0.05);
-    END IF;
-    
-    SELECT SUM(v.PRECIO) INTO  v_suma_precios FROM VENTA v WHERE EXTRACT(MONTH FROM v.FECHA)= EXTRACT(MONTH FROM :new.FECHA) AND 
-    EXTRACT(YEAR FROM v.FECHA)= EXTRACT(YEAR FROM :new.FECHA);
-    
-    IF(v_suma_precios >= 10000) THEN
-        :new.PRECIO := :new.PRECIO - (v_precio_original * 0.08);
-    END IF;
-END;
-/
-ALTER TRIGGER CONTROL_DESCUENTO_CLIENTE ENABLE;
-
-/*****************************************************************************************************/
-
-CREATE OR REPLACE TRIGGER CONTROL_PESO_COCCION BEFORE INSERT OR UPDATE ON COCCION
-For Each Row
-
-DECLARE
-	v_peso_chip NUMBER(10);
-BEGIN
-
-SELECT m.PESOCHIP INTO v_peso_chip FROM MADERACHIP m WHERE m.ID = :NEW.ID_CHIP;
-
-IF(:NEW.PESO > v_peso_chip) THEN
-	Raise_Application_Error (-20002, 'Fallo el control de peso');
-END IF;
-
-END;
-/
-ALTER TRIGGER CONTROL_PESO_COCCION ENABLE;
-
-/*****************************************************************************************************/
-
 CREATE OR REPLACE TRIGGER ACTUALIZAR_PESO_CHIPEO
 INSTEAD OF INSERT OR UPDATE ON VIEW_MADERACHIP
 FOR EACH ROW
@@ -436,6 +395,25 @@ ALTER TRIGGER ACTUALIZAR_PESO_CHIPEO ENABLE;
 
 /*****************************************************************************************************/
 
+CREATE OR REPLACE TRIGGER CONTROL_PESO_COCCION BEFORE INSERT OR UPDATE ON COCCION
+For Each Row
+
+DECLARE
+	v_peso_chip NUMBER(10);
+BEGIN
+
+    SELECT m.PESOCHIP INTO v_peso_chip FROM MADERACHIP m WHERE m.ID = :NEW.ID_CHIP;
+    
+    IF(:NEW.PESO > v_peso_chip) THEN
+        Raise_Application_Error (-20002, 'Fallo el control de peso');
+    END IF;
+
+END;
+/
+ALTER TRIGGER CONTROL_PESO_COCCION ENABLE;
+
+/*****************************************************************************************************/
+
 CREATE OR REPLACE TRIGGER CONTROL_STOCK BEFORE INSERT ON PAPEL
 FOR EACH ROW
 DECLARE
@@ -458,10 +436,61 @@ BEGIN
     
     -- ACTUALIZO EL STOCK
     UPDATE STOCK SET CANTPHIDRO = CANTPHIDRO - :NEW.PHIDRO, CANTACIDO = CANTACIDO - :NEW.ACIDO WHERE ID = 1;
-    
 END;
 /
 ALTER TRIGGER CONTROL_STOCK ENABLE;
 
-COMMIT;
+/*****************************************************************************************************/
 
+CREATE OR REPLACE TRIGGER CONTROL_VENTA INSTEAD OF INSERT OR UPDATE ON VIEW_VENTA
+FOR EACH ROW
+
+DECLARE
+    v_suma_precios NUMBER(10);
+    v_precio_descuento NUMBER(10);
+    v_descuentos_cliente NUMBER(10);
+    v_bonos_empleado NUMBER(10);
+BEGIN
+	v_precio_descuento := :NEW.PRECIO;
+	
+    IF(:NEW.PRECIO >= 1000) THEN
+        v_precio_descuento := v_precio_descuento - (:NEW.PRECIO * 0.08);
+		v_descuentos_cliente := v_descuentos_cliente  + (:NEW.PRECIO * 0.08);
+        v_bonos_empleado := v_bonos_empleado + (:NEW.PRECIO * 0.02);
+    END IF;
+
+    SELECT SUM(v.PRECIO) INTO  v_suma_precios FROM VENTA v 
+    WHERE EXTRACT(MONTH FROM v.FECHA)= EXTRACT(MONTH FROM :new.FECHA) 
+    AND EXTRACT(YEAR FROM v.FECHA)= EXTRACT(YEAR FROM :new.FECHA)
+    AND v.EMAIL_CLIENTE = :NEW.EMAIL_CLIENTE;
+    
+    IF(v_suma_precios >= 10000) THEN
+        v_precio_descuento := v_precio_descuento - (:NEW.PRECIO * 0.05);
+		v_descuentos_cliente := v_descuentos_cliente  + (:NEW.PRECIO * 0.05);
+    END IF;
+    
+    IF INSERTING THEN
+        INSERT INTO INFO_VENTA(ID_VENTA,EMAIL_CLIENTE,CI_VENDEDOR,ID_PAPEL,PRECIO_FINAL,BONO_EMPLEADO,DESCUENTO_CLIENTE,FECHA)
+        VALUES(:NEW.ID, :NEW.EMAIL_CLIENTE,:NEW.CI_VENDEDOR, :NEW.ID_PAPEL,v_precio_descuento, v_bonos_empleado, v_descuentos_cliente,:NEW.FECHA);
+    END IF;
+    
+    IF UPDATING THEN
+        UPDATE INFO_VENTA SET
+        ID_VENTA = :NEW.ID,
+        EMAIL_CLIENTE = :NEW.EMAIL_CLIENTE,
+        CI_VENDEDOR = :NEW.CI_VENDEDOR,
+        ID_PAPEL = :NEW.ID_PAPEL,
+        PRECIO_FINAL = v_precio_descuento,
+        BONO_EMPLEADO = v_bonos_empleado,
+        DESCUENTO_CLIENTE = v_descuentos_cliente,
+        FECHA = :NEW.FECHA
+        WHERE ID_VENTA = :OLD.ID;
+    END IF;
+    
+END;
+/
+ALTER TRIGGER CONTROL_VENTA ENABLE;
+
+/*****************************************************************************************************/
+
+COMMIT;
