@@ -210,22 +210,24 @@ BEGIN
 
         LOOP
             FETCH CLIENTES into v_clientes_rec;
-
-            DBMS_OUTPUT.PUT_LINE(rpad(v_clientes_rec.NOMBRE,12));
-            DBMS_OUTPUT.PUT_LINE(rpad('Total Compras',12) || rpad('Descuentos',12));
+            EXIT WHEN CLIENTES%NOTFOUND;
+            
+            DBMS_OUTPUT.PUT_LINE('Cliente: ' || rpad(v_clientes_rec.NOMBRE,50));
             FOR mes IN (EXTRACT(MONTH from FECHA_DESDE))..(EXTRACT(MONTH from FECHA_HASTA)) LOOP
                 v_mes_actual := mes;
-                DBMS_OUTPUT.PUT_LINE (v_mes_actual);
+                DBMS_OUTPUT.PUT_LINE('MES: ' || TO_CHAR(TO_DATE(v_mes_actual, 'MM'), 'MONTH'));
+                DBMS_OUTPUT.PUT_LINE('TOTAL COMPRAS' || '     ' || 'DESCUENTOS');
                 OPEN INFO;
                 LOOP
                     FETCH INFO into v_info_rec;
-                    DBMS_OUTPUT.PUT_LINE(rpad(v_info_rec.COMPRAS,12) || rpad(v_info_rec.DESCUENTOS,12));
-
                     EXIT WHEN INFO%NOTFOUND;
+                    
+                    DBMS_OUTPUT.PUT_LINE(rpad(v_info_rec.COMPRAS,18) || rpad(v_info_rec.DESCUENTOS,12));
+                    DBMS_OUTPUT.PUT_LINE('   ');
                 END LOOP;
                 CLOSE INFO;
             END LOOP;
-        EXIT WHEN CLIENTES%NOTFOUND;
+            DBMS_OUTPUT.PUT_LINE('-------------------------------------------------------------------');
         END LOOP;
         CLOSE CLIENTES;
 
